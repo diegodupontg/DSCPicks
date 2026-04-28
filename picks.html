@@ -118,6 +118,18 @@
       text-transform: uppercase;
     }
     .standings-table tr:last-child td { border-bottom: 0; }
+    .standings-group-title {
+      padding: 12px 16px 4px;
+      color: var(--accent);
+      font-family: var(--font-display);
+      font-size: 15px;
+      letter-spacing: .5px;
+    }
+    .standings-team {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
 
     .fixture-card {
       background: var(--surface);
@@ -204,6 +216,19 @@
     }
     .summary-label { font-size: 13px; color: var(--text-muted); }
 
+    .expert-pick-panel {
+      margin-top: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
     .no-round-selected {
       display: flex;
       flex-direction: column;
@@ -218,6 +243,7 @@
       .picks-layout { grid-template-columns: 1fr; }
       .rounds-sidebar { position: static; }
       .fixture-main { grid-template-columns: 1fr 70px 1fr; gap: 8px; }
+      .form-row { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -256,6 +282,7 @@
 
     let currentRoundId  = null;
     let currentLeagueId = null;
+    let currentRoundName = 'Jornada';
     let picks = {}; // { fixture_id: '1'|'X'|'2' }
     let fixtures = [];
     let roundDeadlinePassed = false;
@@ -273,7 +300,7 @@
           // League header
           const lgEl = document.createElement('li');
           lgEl.style.cssText = 'padding:8px 16px 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);background:var(--surface2);border-bottom:1px solid var(--border)';
-          lgEl.textContent = `${lg.logo_emoji} ${lg.name}`;
+          lgEl.innerHTML = `<div class="team-with-logo">${leagueLogoHtml(lg, 'team-logo')}<span>${lg.name}</span></div>`;
           list.appendChild(lgEl);
 
           let rounds = [];
@@ -352,6 +379,7 @@
         fixtures = fxs;
         const round  = rounds.find(r => r.id == roundId) || {};
         const league = leagues.find(l => l.id == leagueId) || {};
+        currentRoundName = round.name || 'Jornada';
 
         roundDeadlinePassed = isDeadlinePassed(round.deadline);
 
@@ -371,7 +399,7 @@
         main.innerHTML = `
           <div class="picks-header">
             <div class="picks-title-block">
-              <div class="picks-league-name">${league.logo_emoji || ''} ${league.name || ''}</div>
+              <div class="picks-league-name">${leagueTitleHtml(league)}</div>
               <div class="picks-round-name">${round.name || ''}</div>
             </div>
           </div>
@@ -387,7 +415,7 @@
       main.innerHTML = `
         <div class="picks-header">
           <div class="picks-title-block">
-            <div class="picks-league-name">${league.logo_emoji || ''} ${league.name || ''}</div>
+            <div class="picks-league-name">${leagueTitleHtml(league)}</div>
             <div class="picks-round-name">${round.name || 'Fecha'}</div>
             ${round.deadline ? `
               <div class="picks-deadline ${roundDeadlinePassed ? 'passed' : ''}">
@@ -404,6 +432,7 @@
 
         <div class="fixtures-list" id="fixtures-list"></div>
         ${buildStandingsHtml(standings)}
+        ${buildExpertPanelHtml(fxs, round)}
 
         ${!roundDeadlinePassed ? `
           <div class="summary-bar">
@@ -423,38 +452,82 @@
       updatePickCount();
     }
 
+    function leagueTitleHtml(league) {
+      return `<span class="team-with-logo">${leagueLogoHtml(league, 'team-logo')}<span>${league.name || ''}</span></span>`;
+    }
+
     function buildStandingsHtml(rows) {
       if (!rows || rows.length === 0) return '';
+      const groups = new Map();
+      rows.forEach(r => {
+        const key = r.group || 'Tabla general';
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(r);
+      });
+      const manyGroups = groups.size > 1;
       return `
         <div class="standings-table-wrap">
           <div class="standings-head">
             <span>Tabla de posiciones</span>
-            <span>${rows.length} equipos</span>
+            <span>${manyGroups ? `${groups.size} grupos` : `${rows.length} equipos`}</span>
           </div>
-          <table class="standings-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Equipo</th>
-                <th>G</th>
-                <th>P</th>
-                <th>E</th>
-                <th>Pts</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rows.slice(0, 40).map((r, i) => `
+          ${Array.from(groups.entries()).map(([name, items]) => `
+            ${manyGroups ? `<div class="standings-group-title">${name}</div>` : ''}
+            <table class="standings-table">
+              <thead>
                 <tr>
-                  <td>${i + 1}</td>
-                  <td>${r.team}</td>
-                  <td>${r.wins || ''}</td>
-                  <td>${r.losses || ''}</td>
-                  <td>${r.ties || ''}</td>
-                  <td>${r.points || r.pct || ''}</td>
+                  <th>#</th>
+                  <th>Equipo</th>
+                  <th>G</th>
+                  <th>P</th>
+                  <th>E</th>
+                  <th>Pts</th>
                 </tr>
-              `).join('')}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                ${items.slice(0, 12).map((r, i) => `
+                  <tr>
+                    <td>${i + 1}</td>
+                    <td><div class="standings-team">${teamLogoHtml(r.logo, r.team, 'team-logo')}<span>${r.team}</span></div></td>
+                    <td>${r.wins || ''}</td>
+                    <td>${r.losses || ''}</td>
+                    <td>${r.ties || ''}</td>
+                    <td>${r.points || r.pct || ''}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `).join('')}
+        </div>`;
+    }
+
+    function buildExpertPanelHtml(fxs, round) {
+      if (!isExpertAccount()) return '';
+      const pickedFixtures = fxs.filter(fx => picks[fx.id]);
+      return `
+        <div class="expert-pick-panel">
+          <div class="section-title">MI PICK DESTACADO</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Pick guardado</label>
+              <select id="expert-fixture-select" class="form-select" ${pickedFixtures.length ? '' : 'disabled'}>
+                ${pickedFixtures.length ? pickedFixtures.map(fx => `
+                  <option value="${fx.id}" data-pick="${picks[fx.id]}">
+                    ${pickLabel(picks[fx.id], fx.home_team, fx.away_team)} - ${fx.home_team} vs ${fx.away_team}
+                  </option>
+                `).join('') : '<option>Guarda primero un pick en esta jornada</option>'}
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Titulo</label>
+              <input id="expert-title" class="form-input" placeholder="Mi mejor pick de la jornada">
+            </div>
+          </div>
+          <div class="form-group mt-12">
+            <label class="form-label">Opinion</label>
+            <textarea id="expert-note" class="form-textarea" rows="3" placeholder="Por que lo eliges"></textarea>
+          </div>
+          <button class="btn btn-outline mt-16" ${pickedFixtures.length ? '' : 'disabled'} onclick="saveMyExpertPick()">Publicar opinion</button>
         </div>`;
     }
 
@@ -476,12 +549,12 @@
       div.innerHTML = `
         <div class="fixture-main">
           <div class="fixture-team-block fixture-team-home">
-            <div class="fixture-team-name">${fx.home_team}</div>
+            <div class="team-with-logo">${teamLogoHtml(fx.home_logo, fx.home_team)}<div class="fixture-team-name">${fx.home_team}</div></div>
             <div class="text-xs text-muted">LOCAL</div>
           </div>
           <div class="fixture-mid">${scoreHtml}</div>
           <div class="fixture-team-block fixture-team-away">
-            <div class="fixture-team-name">${fx.away_team}</div>
+            <div class="team-with-logo">${teamLogoHtml(fx.away_logo, fx.away_team)}<div class="fixture-team-name">${fx.away_team}</div></div>
             <div class="text-xs text-muted">VISITA</div>
           </div>
         </div>
@@ -533,12 +606,33 @@
 
       btn.classList.add(`selected-${value}`);
       updatePickCount();
+      refreshExpertFixtureOptions();
     }
 
     function updatePickCount() {
       const count = Object.keys(picks).length;
       const el = document.getElementById('pick-count');
       if (el) el.textContent = count;
+    }
+
+    function refreshExpertFixtureOptions() {
+      const select = document.getElementById('expert-fixture-select');
+      if (!select || !isExpertAccount()) return;
+      const pickedFixtures = fixtures.filter(fx => picks[fx.id]);
+      select.disabled = pickedFixtures.length === 0;
+      select.innerHTML = pickedFixtures.length
+        ? pickedFixtures.map(fx => `
+            <option value="${fx.id}" data-pick="${picks[fx.id]}">
+              ${pickLabel(picks[fx.id], fx.home_team, fx.away_team)} - ${fx.home_team} vs ${fx.away_team}
+            </option>
+          `).join('')
+        : '<option>Guarda primero un pick en esta jornada</option>';
+    }
+
+    function pickLabel(pick, home, away) {
+      if (pick === '1') return `1 - ${home || 'Local'}`;
+      if (pick === '2') return `2 - ${away || 'Visita'}`;
+      return 'X - Empate';
     }
 
     async function savePicks() {
@@ -557,10 +651,35 @@
 
         await api('/picks', { method: 'POST', body: { picks: payload } });
         toast(`✅ ${payload.length} picks guardados`, 'success');
+        refreshExpertFixtureOptions();
       } catch(e) {
         toast(e.message, 'error');
       } finally {
         btns.forEach(b => { b.disabled = false; b.textContent = '💾 Guardar Picks'; });
+      }
+    }
+
+    async function saveMyExpertPick() {
+      const select = document.getElementById('expert-fixture-select');
+      if (!select || select.disabled) {
+        toast('Guarda primero un pick en esta jornada', 'error');
+        return;
+      }
+      const opt = select.selectedOptions[0];
+      try {
+        await api('/expert-picks', {
+          method: 'POST',
+          body: {
+            fixture_id: Number(select.value),
+            week_label: currentRoundName,
+            pick: opt.dataset.pick,
+            title: document.getElementById('expert-title').value.trim(),
+            note: document.getElementById('expert-note').value.trim()
+          }
+        });
+        toast('Opinion publicada', 'success');
+      } catch(e) {
+        toast(e.message, 'error');
       }
     }
 

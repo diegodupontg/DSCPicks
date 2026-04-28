@@ -568,6 +568,48 @@ h3 { font-size: 24px; }
 .league-name { font-family: var(--font-display); font-size: 20px; letter-spacing: .5px; margin-bottom: 4px; }
 .league-season { font-size: 13px; color: var(--text-muted); }
 
+.league-logo-img {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+.league-logo-img.fallback {
+  display: inline-grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-size: 14px;
+}
+
+.team-logo {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+.team-logo.fallback {
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.team-with-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.fixture-team-home .team-with-logo { flex-direction: row-reverse; }
+.league-header .league-header-emoji { display: none; }
+
 /* ── TOAST ─────────────────────────────────── */
 #toast-container {
   position: fixed;

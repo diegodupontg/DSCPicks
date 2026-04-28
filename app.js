@@ -110,6 +110,21 @@ function renderNav(activePage = '') {
   `;
 }
 
+function leagueLogoHtml(league, cls = 'league-logo-img') {
+  if (league?.logo_url) return `<img class="${cls}" src="${league.logo_url}" alt="${league.name || 'Liga'}">`;
+  return `<span class="${cls} fallback">${league?.logo_emoji || 'T'}</span>`;
+}
+
+function teamLogoHtml(url, name, cls = 'team-logo') {
+  if (!url) return `<span class="${cls} fallback">${(name || '?').slice(0, 1).toUpperCase()}</span>`;
+  return `<img class="${cls}" src="${url}" alt="${name || 'Equipo'}">`;
+}
+
+function isExpertAccount(user = getUser()) {
+  return ['diegodupontg', 'pieroludena', 'matysports']
+    .includes(String(user?.username || '').toLowerCase());
+}
+
 // ── Toast ────────────────────────────────────────────
 function ensureToastContainer() {
   let c = document.getElementById('toast-container');

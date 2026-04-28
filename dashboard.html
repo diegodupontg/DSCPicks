@@ -236,6 +236,7 @@
 
       section.innerHTML = `
         <div class="league-header">
+          ${leagueLogoHtml(league)}
           <span class="league-header-emoji">${league.logo_emoji || '🏆'}</span>
           <div class="league-header-info">
             <div class="league-header-name">${league.name}</div>
@@ -321,7 +322,11 @@
               </div>
             </div>
             <div class="expert-pick">${pickLabel(p.pick, p.home_team, p.away_team)}</div>
-            <div class="expert-match">${p.home_team || 'Partido'} vs ${p.away_team || 'por definir'}</div>
+            <div class="expert-match team-with-logo">
+              ${teamLogoHtml(p.home_logo, p.home_team, 'team-logo')}
+              <span>${p.home_team || 'Partido'} vs ${p.away_team || 'por definir'}</span>
+              ${teamLogoHtml(p.away_logo, p.away_team, 'team-logo')}
+            </div>
             <div class="expert-week">${p.league_name || ''}${p.broadcast ? ' · ' + p.broadcast : ''}</div>
             ${p.title ? `<div class="expert-note"><strong>${p.title}</strong></div>` : ''}
             ${p.note ? `<div class="expert-note">${p.note}</div>` : ''}
