@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dupo Polla — Ingresar</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { display: flex; align-items: stretch; min-height: 100vh; }
+
+    .auth-split {
+      display: grid;
+      grid-template-columns: 1fr 480px;
+      width: 100%;
+      min-height: 100vh;
+    }
+
+    /* ── LEFT: branding ── */
+    .auth-left {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 60px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .auth-left::before {
+      content: '';
+      position: absolute;
+      top: -120px; left: -120px;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(200,255,0,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .auth-left::after {
+      content: '';
+      position: absolute;
+      bottom: -60px; right: -60px;
+      width: 320px; height: 320px;
+      background: radial-gradient(circle, rgba(77,142,255,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .auth-logo { margin-bottom: 48px; }
+
+    .auth-headline {
+      font-family: var(--font-display);
+      font-size: 72px;
+      line-height: .9;
+      letter-spacing: 2px;
+      color: var(--text);
+      margin-bottom: 24px;
+    }
+    .auth-headline em {
+      font-style: normal;
+      color: var(--accent);
+      display: block;
+    }
+
+    .auth-sub {
+      font-size: 16px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      max-width: 380px;
+      margin-bottom: 40px;
+    }
+
+    .auth-pills {
+      display: flex; flex-wrap: wrap; gap: 8px;
+    }
+    .auth-pill {
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 100px;
+      padding: 6px 14px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* ── RIGHT: form ── */
+    .auth-right {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 60px 48px;
+      background: var(--bg);
+    }
+
+    .auth-tabs {
+      display: flex;
+      gap: 2px;
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 4px;
+      margin-bottom: 32px;
+    }
+    .auth-tab {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background: transparent;
+      border-radius: calc(var(--radius) - 2px);
+      color: var(--text-muted);
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .auth-tab.active {
+      background: var(--surface2);
+      color: var(--text);
+    }
+
+    .auth-form { display: flex; flex-direction: column; gap: 16px; }
+    .auth-form-panel { display: none; }
+    .auth-form-panel.active { display: flex; flex-direction: column; gap: 16px; }
+
+    .auth-title {
+      font-family: var(--font-display);
+      font-size: 28px;
+      letter-spacing: .5px;
+      margin-bottom: 8px;
+    }
+    .auth-desc {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    .auth-footer {
+      margin-top: 24px;
+      font-size: 13px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    @media (max-width: 900px) {
+      .auth-split { grid-template-columns: 1fr; }
+      .auth-left { display: none; }
+      .auth-right { padding: 40px 24px; justify-content: flex-start; padding-top: 60px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-split">
+    <!-- LEFT -->
+    <div class="auth-left">
+      <div class="auth-logo">
+        <div id="auth-brand-logo"></div>
+      </div>
+      <h1 class="auth-headline">
+        La mejor<br>
+        <em>POLLA</em>
+        del barrio
+      </h1>
+      <p class="auth-sub">
+        Predice resultados, compite con tus amigos y lleva la tabla en tiempo real.
+        Fútbol, basketball y brackets — todo en un solo lugar.
+      </p>
+      <div class="auth-pills">
+        <span class="auth-pill">⚽ Champions League</span>
+        <span class="auth-pill">⚽ Eliminatorias</span>
+        <span class="auth-pill">🏀 EuroLeague</span>
+        <span class="auth-pill">🏀 ACB</span>
+        <span class="auth-pill">🏆 Brackets</span>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="auth-right">
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-tab="login" onclick="switchTab('login')">Ingresar</button>
+        <button class="auth-tab" data-tab="register" onclick="switchTab('register')">Registrarse</button>
+      </div>
+
+      <!-- LOGIN -->
+      <div id="panel-login" class="auth-form-panel active">
+        <div>
+          <h2 class="auth-title">Bienvenido de vuelta</h2>
+          <p class="auth-desc">Ingresa con tu usuario para ver tus picks.</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Usuario</label>
+          <input type="text" id="login-user" class="form-input" placeholder="Tu nombre de usuario" autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contraseña</label>
+          <input type="password" id="login-pass" class="form-input" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button class="btn btn-accent btn-full btn-lg" id="btn-login" onclick="doLogin()">
+          Ingresar
+        </button>
+      </div>
+
+      <!-- REGISTER -->
+      <div id="panel-register" class="auth-form-panel">
+        <div>
+          <h2 class="auth-title">Crea tu cuenta</h2>
+          <p class="auth-desc">Elige un apodo y empieza a predecir.</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Usuario / Apodo</label>
+          <input type="text" id="reg-user" class="form-input" placeholder="El Profeta, Diego10..." autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nombre visible</label>
+          <input type="text" id="reg-display" class="form-input" placeholder="Como quieres aparecer en la tabla" autocomplete="name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Foto</label>
+          <input type="file" id="reg-avatar" class="form-input" accept="image/png,image/jpeg,image/webp,image/gif">
+          <div class="text-xs text-muted">PNG, JPG, WebP o GIF. Maximo 250 KB.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contraseña</label>
+          <input type="password" id="reg-pass" class="form-input" placeholder="Minimo 8 caracteres con letras y numeros" autocomplete="new-password" oninput="updatePasswordHint()">
+          <div class="text-xs text-muted" id="password-hint">Usa al menos 8 caracteres, con una letra y un numero.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirmar Contraseña</label>
+          <input type="password" id="reg-pass2" class="form-input" placeholder="Repite tu contraseña" autocomplete="new-password">
+        </div>
+        <button class="btn btn-accent btn-full btn-lg" id="btn-register" onclick="doRegister()">
+          Crear cuenta
+        </button>
+      </div>
+
+      <p class="auth-footer">
+        Dupo Polla · Dupo Corp &copy; 2025
+      </p>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="logos.js"></script>
+  <script src="app.js"></script>
+  <script>
+    document.getElementById('auth-brand-logo').innerHTML = brandLogoHtml('auth');
+
+    // Redirect if already logged in
+    if (getToken()) window.location.href = 'dashboard.html';
+
+    function switchTab(tab) {
+      document.querySelectorAll('.auth-tab').forEach(b =>
+        b.classList.toggle('active', b.dataset.tab === tab));
+      document.getElementById('panel-login').classList.toggle('active', tab === 'login');
+      document.getElementById('panel-register').classList.toggle('active', tab === 'register');
+    }
+
+    // Enter key support
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      const loginActive = document.getElementById('panel-login').classList.contains('active');
+      if (loginActive) doLogin();
+      else doRegister();
+    });
+
+    async function doLogin() {
+      const username = document.getElementById('login-user').value.trim();
+      const password = document.getElementById('login-pass').value;
+      if (!username || !password) { toast('Completa todos los campos', 'error'); return; }
+
+      const btn = document.getElementById('btn-login');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Ingresando...';
+
+      try {
+        const { token, user } = await api('/auth/login', {
+          method: 'POST', body: { username, password }
+        });
+        setAuth(token, user);
+        toast('¡Bienvenido, ' + user.username + '!', 'success');
+        setTimeout(() => window.location.href = 'dashboard.html', 500);
+      } catch(e) {
+        toast(e.message, 'error');
+        btn.disabled = false;
+        btn.textContent = 'Ingresar';
+      }
+    }
+
+    async function doRegister() {
+      const username = document.getElementById('reg-user').value.trim();
+      const display_name = document.getElementById('reg-display').value.trim();
+      const password = document.getElementById('reg-pass').value;
+      const pass2    = document.getElementById('reg-pass2').value;
+      const avatarFile = document.getElementById('reg-avatar').files[0];
+
+      if (!username || !password) { toast('Completa todos los campos', 'error'); return; }
+      if (!/^[a-zA-Z0-9_]{3,24}$/.test(username)) { toast('Usuario: 3-24 caracteres, solo letras, numeros y _', 'error'); return; }
+      if (password.length < 8 || !/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+        toast('La contraseña debe tener 8 caracteres, letras y numeros', 'error'); return;
+      }
+      if (password !== pass2) { toast('Las contraseñas no coinciden', 'error'); return; }
+      if (avatarFile && avatarFile.size > 250 * 1024) { toast('La imagen supera 250 KB', 'error'); return; }
+
+      const btn = document.getElementById('btn-register');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Creando cuenta...';
+
+      try {
+        const avatar_url = avatarFile ? await fileToDataURL(avatarFile) : '';
+        const { token, user } = await api('/auth/register', {
+          method: 'POST', body: { username, display_name, avatar_url, password }
+        });
+        setAuth(token, user);
+        toast('¡Cuenta creada! Bienvenido, ' + user.username, 'success');
+        setTimeout(() => window.location.href = 'dashboard.html', 500);
+      } catch(e) {
+        toast(e.message, 'error');
+        btn.disabled = false;
+        btn.textContent = 'Crear cuenta';
+      }
+    }
+
+    function updatePasswordHint() {
+      const pass = document.getElementById('reg-pass').value;
+      const ok = pass.length >= 8 && /[A-Za-z]/.test(pass) && /[0-9]/.test(pass);
+      const hint = document.getElementById('password-hint');
+      hint.textContent = ok ? 'Contraseña lista.' : 'Usa al menos 8 caracteres, con una letra y un numero.';
+      hint.className = ok ? 'text-xs text-success' : 'text-xs text-muted';
+    }
+
+    function fileToDataURL(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('No se pudo leer la imagen'));
+        reader.readAsDataURL(file);
+      });
+    }
+  </script>
+</body>
+</html>

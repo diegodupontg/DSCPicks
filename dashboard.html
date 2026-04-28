@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dupo Polla — Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .hero {
+      padding: 36px 0 24px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 32px;
+    }
+    .hero-greeting {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .hero-name {
+      font-family: var(--font-display);
+      font-size: 52px;
+      letter-spacing: 1px;
+      line-height: 1;
+    }
+    .hero-name em { font-style: normal; color: var(--accent); }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 24px;
+    }
+
+    .rounds-area {}
+
+    .round-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .15s;
+      text-decoration: none;
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .round-pill:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .round-pill.active {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .round-pills-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .league-section { margin-bottom: 36px; }
+    .league-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .league-header-emoji { font-size: 28px; }
+    .league-header-info {}
+    .league-header-name {
+      font-family: var(--font-display);
+      font-size: 22px;
+      letter-spacing: .5px;
+    }
+
+    .go-picks-btn {
+      margin-left: auto;
+    }
+
+    /* Sidebar */
+    .sidebar { display: flex; flex-direction: column; gap: 20px; }
+
+    .my-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .dashboard-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header id="navbar" class="navbar container"></header>
+
+  <div class="container page">
+    <!-- Hero -->
+    <div class="hero">
+      <div class="hero-greeting">Buenas,</div>
+      <div class="hero-name" id="hero-name">...</div>
+    </div>
+
+    <div class="dashboard-grid">
+      <!-- MAIN: Ligas y Fechas -->
+      <div>
+        <div id="leagues-container">
+          <div class="loading-center">
+            <span class="spinner"></span> Cargando ligas...
+          </div>
+        </div>
+
+        <div class="league-section">
+          <div class="section-title">PICKS DE LA SEMANA</div>
+          <div id="expert-picks" class="expert-grid">
+            <div class="loading-center"><span class="spinner"></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <!-- Perfil -->
+        <div class="card">
+          <div class="section-title" style="font-size:16px;">MI PERFIL</div>
+          <div class="flex-center gap-12">
+            <div id="profile-avatar" class="profile-avatar-lg"></div>
+            <div style="flex:1;">
+              <div class="form-group">
+                <label class="form-label">Nombre visible</label>
+                <input id="profile-display" class="form-input" maxlength="60">
+              </div>
+            </div>
+          </div>
+          <div class="form-group mt-12">
+            <label class="form-label">Foto</label>
+            <input id="profile-image" type="file" class="form-input" accept="image/png,image/jpeg,image/webp,image/gif">
+          </div>
+          <button class="btn btn-outline btn-full mt-12" id="btn-profile" onclick="saveProfile()">Guardar perfil</button>
+        </div>
+
+        <!-- Mis stats -->
+        <div class="card">
+          <div class="section-title" style="font-size:16px;">MIS STATS</div>
+          <div class="my-stats" id="my-stats">
+            <div class="stat-box">
+              <span class="stat-value" id="stat-pts">—</span>
+              <span class="stat-label">Puntos</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-value" id="stat-correct">—</span>
+              <span class="stat-label">Correctos</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-value" id="stat-played">—</span>
+              <span class="stat-label">Jugados</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Leaderboard Global -->
+        <div class="card">
+          <div class="section-title" style="font-size:16px;">TABLA GLOBAL</div>
+          <div id="leaderboard-list">
+            <div class="loading-center"><span class="spinner"></span></div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="logos.js"></script>
+  <script src="app.js"></script>
+  <script>
+    if (!requireAuth()) throw new Error('redirect');
+
+    const user = getUser();
+    renderNav('dashboard');
+    document.getElementById('hero-name').innerHTML =
+      (user.display_name || user.username).toUpperCase().split('').map((c,i) =>
+        i===0 ? `<em>${c}</em>` : c
+      ).join('');
+
+    // Load everything
+    loadLeagues();
+    loadExpertPicks();
+    loadLeaderboard();
+    loadMyStats();
+    loadProfile();
+
+    async function loadLeagues() {
+      const container = document.getElementById('leagues-container');
+      try {
+        const leagues = await api('/leagues');
+        if (leagues.length === 0) {
+          container.innerHTML = `<div class="empty">
+            <div class="empty-icon">🏟️</div>
+            <div class="empty-title">Sin ligas activas</div>
+            <div class="empty-desc">Un administrador debe crear ligas primero.</div>
+          </div>`;
+          return;
+        }
+
+        container.innerHTML = '';
+        for (const lg of leagues) {
+          await renderLeagueSection(lg, container);
+        }
+      } catch(e) {
+        container.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-title">${e.message}</div></div>`;
+      }
+    }
+
+    async function renderLeagueSection(league, container) {
+      const section = document.createElement('div');
+      section.className = 'league-section';
+
+      let rounds = [];
+      try { rounds = await api(`/rounds?league_id=${league.id}`); } catch {}
+
+      const isRacket = league.sport === 'bracket';
+      const picksLink = isRacket
+        ? `brackets.html?league_id=${league.id}`
+        : `picks.html?league_id=${league.id}`;
+
+      section.innerHTML = `
+        <div class="league-header">
+          <span class="league-header-emoji">${league.logo_emoji || '🏆'}</span>
+          <div class="league-header-info">
+            <div class="league-header-name">${league.name}</div>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
+              ${sportBadge(league.sport)}
+              ${league.season ? `<span class="text-xs text-muted font-mono">${league.season}</span>` : ''}
+            </div>
+          </div>
+          <a href="${picksLink}" class="btn btn-accent btn-sm go-picks-btn">
+            ${isRacket ? '🏆 Ver Bracket' : '✏️ Mis Picks'}
+          </a>
+        </div>
+
+        ${rounds.length > 0 ? `
+          <div class="round-pills-wrap">
+            ${rounds.slice(0, 6).map(r => `
+              <a href="picks.html?round_id=${r.id}&league_id=${league.id}" class="round-pill">
+                ${r.name}
+                ${r.deadline ? `<span class="text-xs">${isDeadlinePassed(r.deadline) ? '🔒' : '🕐'}</span>` : ''}
+              </a>
+            `).join('')}
+            ${rounds.length > 6 ? `<span class="text-muted text-sm">+${rounds.length-6} más</span>` : ''}
+          </div>
+        ` : `<p class="text-sm text-muted" style="margin-bottom:16px;">Sin fechas disponibles aún.</p>`}
+
+        <div class="sep"></div>
+      `;
+      container.appendChild(section);
+    }
+
+    async function loadLeaderboard() {
+      const el = document.getElementById('leaderboard-list');
+      try {
+        const lb = await api('/leaderboard');
+        if (lb.length === 0) {
+          el.innerHTML = '<div class="empty-desc text-muted text-sm" style="padding:16px 0">Aún nadie en tabla.</div>';
+          return;
+        }
+        el.innerHTML = lb.slice(0, 10).map((row, i) => `
+          <div class="lb-row">
+            <span class="lb-rank ${rankClass(i)}">${i+1}</span>
+            <div>
+              <div class="lb-name">${row.username}</div>
+            </div>
+            <div class="lb-pts">${row.points}</div>
+          </div>
+        `).join('');
+      } catch(e) {
+        el.innerHTML = `<div class="text-muted text-sm">${e.message}</div>`;
+      }
+    }
+
+    async function loadMyStats() {
+      try {
+        const { user: u } = await api('/auth/me');
+        document.getElementById('stat-pts').textContent = u.total_points || 0;
+
+        // Get detailed stats from leaderboard
+        const lb = await api('/leaderboard');
+        const me = lb.find(r => r.username === user.username);
+        if (me) {
+          document.getElementById('stat-correct').textContent = me.correct_picks || 0;
+          document.getElementById('stat-played').textContent  = me.total_played  || 0;
+        }
+      } catch {}
+    }
+
+    async function loadExpertPicks() {
+      const el = document.getElementById('expert-picks');
+      try {
+        const picks = await api('/expert-picks');
+        if (!picks.length) {
+          el.innerHTML = '<div class="empty-desc text-muted text-sm">Aun no hay picks destacados.</div>';
+          return;
+        }
+        el.innerHTML = picks.slice(0, 3).map(p => `
+          <div class="expert-card">
+            <div class="expert-head">
+              ${p.avatar_url ? `<img class="expert-avatar" src="${p.avatar_url}" alt="${p.display_name || p.username}">` : `<div class="expert-avatar">${(p.display_name || p.username || '?')[0].toUpperCase()}</div>`}
+              <div>
+                <div class="expert-name">${p.display_name || p.username}</div>
+                <div class="expert-week">${p.week_label}</div>
+              </div>
+            </div>
+            <div class="expert-pick">${pickLabel(p.pick, p.home_team, p.away_team)}</div>
+            <div class="expert-match">${p.home_team || 'Partido'} vs ${p.away_team || 'por definir'}</div>
+            <div class="expert-week">${p.league_name || ''}${p.broadcast ? ' · ' + p.broadcast : ''}</div>
+            ${p.title ? `<div class="expert-note"><strong>${p.title}</strong></div>` : ''}
+            ${p.note ? `<div class="expert-note">${p.note}</div>` : ''}
+          </div>
+        `).join('');
+      } catch(e) {
+        el.innerHTML = `<div class="text-muted text-sm">${e.message}</div>`;
+      }
+    }
+
+    function pickLabel(pick, home, away) {
+      if (pick === '1') return `1 - ${home || 'Local'}`;
+      if (pick === '2') return `2 - ${away || 'Visita'}`;
+      return 'X - Empate';
+    }
+
+    async function loadProfile() {
+      try {
+        const { user: me } = await api('/auth/me');
+        localStorage.setItem('dp_user', JSON.stringify(me));
+        document.getElementById('profile-display').value = me.display_name || me.username;
+        document.getElementById('profile-avatar').outerHTML = me.avatar_url
+          ? `<img id="profile-avatar" class="profile-avatar-lg" src="${me.avatar_url}" alt="${me.display_name || me.username}">`
+          : `<div id="profile-avatar" class="profile-avatar-lg">${(me.display_name || me.username || '?')[0].toUpperCase()}</div>`;
+      } catch {}
+    }
+
+    async function saveProfile() {
+      const btn = document.getElementById('btn-profile');
+      const file = document.getElementById('profile-image').files[0];
+      if (file && file.size > 250 * 1024) { toast('La imagen supera 250 KB', 'error'); return; }
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Guardando...';
+      try {
+        const body = { display_name: document.getElementById('profile-display').value.trim() };
+        if (file) body.avatar_url = await fileToDataURL(file);
+        const { user: updated } = await api('/profile', { method: 'PUT', body });
+        localStorage.setItem('dp_user', JSON.stringify(updated));
+        toast('Perfil actualizado', 'success');
+        renderNav('dashboard');
+        loadProfile();
+      } catch(e) {
+        toast(e.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Guardar perfil';
+      }
+    }
+
+    function fileToDataURL(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('No se pudo leer la imagen'));
+        reader.readAsDataURL(file);
+      });
+    }
+  </script>
+</body>
+</html>

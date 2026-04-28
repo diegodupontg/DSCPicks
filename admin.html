@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dupo Polla - Admin</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .admin-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 20px;
+      align-items: start;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    @media (max-width: 900px) {
+      .admin-grid, .form-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header id="navbar" class="navbar container"></header>
+
+  <div class="container page">
+    <div class="picks-header">
+      <div>
+        <div class="picks-league-name">ADMIN</div>
+        <div class="picks-round-name">Calendario y expertos</div>
+      </div>
+    </div>
+
+    <div class="admin-grid">
+      <div class="card">
+        <div class="section-title">SINCRONIZAR ESPN</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Liga</label>
+            <select id="sync-league" class="form-select"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fechas ESPN</label>
+            <input id="sync-dates" class="form-input" placeholder="20260428 o 20260428-20260504">
+          </div>
+        </div>
+        <div class="form-row mt-12">
+          <div class="form-group">
+            <label class="form-label">Prefijo de fecha</label>
+            <input id="sync-prefix" class="form-input" placeholder="Semana actual">
+          </div>
+          <label class="flex-center gap-8" style="margin-top:26px;">
+            <input type="checkbox" id="sync-only-espn">
+            <span class="text-sm text-muted">Solo eventos con broadcast ESPN</span>
+          </label>
+        </div>
+        <button class="btn btn-accent mt-16" id="btn-sync" onclick="syncESPN()">Actualizar partidos</button>
+        <div id="sync-result" class="text-sm text-muted mt-12"></div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">PICK DE EXPERTO</div>
+        <div class="form-group">
+          <label class="form-label">Experto</label>
+          <select id="expert-user" class="form-select"></select>
+        </div>
+        <div class="form-row mt-12">
+          <div class="form-group">
+            <label class="form-label">Semana</label>
+            <input id="expert-week" class="form-input" value="Semana 1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Pick</label>
+            <select id="expert-pick" class="form-select">
+              <option value="1">1 - Local</option>
+              <option value="X">X - Empate</option>
+              <option value="2">2 - Visita</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group mt-12">
+          <label class="form-label">ID del partido</label>
+          <input id="expert-fixture" class="form-input" placeholder="Ej: 1001">
+        </div>
+        <div class="form-group mt-12">
+          <label class="form-label">Titulo</label>
+          <input id="expert-title" class="form-input" placeholder="La mejor jugada de Diego">
+        </div>
+        <div class="form-group mt-12">
+          <label class="form-label">Nota</label>
+          <textarea id="expert-note" class="form-textarea" rows="3" placeholder="Argumento corto del pick"></textarea>
+        </div>
+        <button class="btn btn-outline btn-full mt-16" id="btn-expert" onclick="saveExpertPick()">Guardar pick</button>
+      </div>
+
+      <div class="card">
+        <div class="section-title">SUPERPERMISOS</div>
+        <div id="admin-users-list" class="text-sm text-muted">Cargando usuarios...</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="logos.js"></script>
+  <script src="app.js"></script>
+  <script>
+    if (!requireAdmin()) throw new Error('redirect');
+    renderNav('admin');
+
+    loadAdminData();
+
+    async function loadAdminData() {
+      const [leagues, experts] = await Promise.all([api('/leagues'), api('/experts')]);
+      document.getElementById('sync-league').innerHTML = leagues
+        .filter(l => l.api_provider === 'espn')
+        .map(l => `<option value="${l.id}" data-dates="${l.api_dates || ''}">${l.name}</option>`)
+        .join('');
+      document.getElementById('expert-user').innerHTML = experts
+        .map(u => `<option value="${u.id}">${u.display_name || u.username}</option>`)
+        .join('');
+      applyLeagueDates();
+      document.getElementById('sync-league').addEventListener('change', applyLeagueDates);
+      if (isSuperAdmin()) loadAdminUsers();
+    }
+
+    function applyLeagueDates() {
+      const opt = document.getElementById('sync-league').selectedOptions[0];
+      document.getElementById('sync-dates').value = opt?.dataset?.dates || '';
+    }
+
+    async function syncESPN() {
+      const btn = document.getElementById('btn-sync');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Actualizando...';
+      try {
+        const data = await api('/sync/espn', {
+          method: 'POST',
+          body: {
+            league_id: Number(document.getElementById('sync-league').value),
+            dates: document.getElementById('sync-dates').value.trim(),
+            round_prefix: document.getElementById('sync-prefix').value.trim(),
+            only_espn: document.getElementById('sync-only-espn').checked
+          }
+        });
+        document.getElementById('sync-result').textContent =
+          `${data.imported} partidos actualizados. Resultados recalculados: ${data.updated_results}.`;
+        toast('Calendario actualizado', 'success');
+      } catch(e) {
+        toast(e.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Actualizar partidos';
+      }
+    }
+
+    async function saveExpertPick() {
+      const btn = document.getElementById('btn-expert');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Guardando...';
+      try {
+        await api('/expert-picks', {
+          method: 'POST',
+          body: {
+            expert_user_id: Number(document.getElementById('expert-user').value),
+            fixture_id: Number(document.getElementById('expert-fixture').value),
+            week_label: document.getElementById('expert-week').value.trim(),
+            pick: document.getElementById('expert-pick').value,
+            title: document.getElementById('expert-title').value.trim(),
+            note: document.getElementById('expert-note').value.trim()
+          }
+        });
+        toast('Pick semanal guardado', 'success');
+      } catch(e) {
+        toast(e.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Guardar pick';
+      }
+    }
+
+    async function loadAdminUsers() {
+      const el = document.getElementById('admin-users-list');
+      try {
+        const users = await api('/admin/users');
+        el.innerHTML = users.map(u => `
+          <div class="lb-row">
+            ${u.avatar_url ? `<img class="expert-avatar" src="${u.avatar_url}" alt="${u.display_name || u.username}">` : `<div class="expert-avatar">${(u.display_name || u.username || '?')[0].toUpperCase()}</div>`}
+            <div style="flex:1;">
+              <div class="lb-name">${u.display_name || u.username}</div>
+              <div class="lb-meta">@${u.username}</div>
+            </div>
+            <label class="text-xs text-muted flex-center gap-4">
+              <input type="checkbox" ${u.is_admin ? 'checked' : ''} onchange="updateRole(${u.id}, this.checked, document.getElementById('super-${u.id}').checked)">
+              Admin
+            </label>
+            <label class="text-xs text-muted flex-center gap-4">
+              <input id="super-${u.id}" type="checkbox" ${u.is_super_admin ? 'checked' : ''} onchange="updateRole(${u.id}, true, this.checked)">
+              Super
+            </label>
+          </div>
+        `).join('');
+      } catch(e) {
+        el.textContent = e.message;
+      }
+    }
+
+    async function updateRole(userId, is_admin, is_super_admin) {
+      try {
+        await api(`/admin/users/${userId}/role`, {
+          method: 'PUT',
+          body: { is_admin, is_super_admin }
+        });
+        toast('Permisos actualizados', 'success');
+        loadAdminUsers();
+      } catch(e) {
+        toast(e.message, 'error');
+        loadAdminUsers();
+      }
+    }
+  </script>
+</body>
+</html>
