@@ -262,8 +262,30 @@ const COUNTRY_CODES = {
 };
 
 const TEAM_LOGO_FALLBACKS = {
+  'Alavés': 'soccer/500/96.png',
+  'Alaves': 'soccer/500/96.png',
+  'Athletic Club': 'soccer/500/93.png',
+  'Athletic Bilbao': 'soccer/500/93.png',
+  'Atlético Madrid': 'soccer/500/1068.png',
+  'Atletico Madrid': 'soccer/500/1068.png',
   'Barcelona': 'soccer/500/83.png',
+  'Celta Vigo': 'soccer/500/85.png',
+  'Elche': 'soccer/500/3751.png',
+  'Espanyol': 'soccer/500/88.png',
+  'Getafe': 'soccer/500/2922.png',
+  'Girona': 'soccer/500/9812.png',
+  'Girona FC': 'soccer/500/9812.png',
+  'Levante': 'soccer/500/1538.png',
+  'Mallorca': 'soccer/500/84.png',
+  'Osasuna': 'soccer/500/97.png',
+  'Rayo Vallecano': 'soccer/500/101.png',
+  'Real Betis': 'soccer/500/244.png',
   'Real Madrid': 'soccer/500/86.png',
+  'Real Oviedo': 'soccer/500/118.png',
+  'Real Sociedad': 'soccer/500/89.png',
+  'Sevilla': 'soccer/500/243.png',
+  'Valencia': 'soccer/500/94.png',
+  'Villarreal': 'soccer/500/102.png',
   'Detroit Pistons': 'nba/500/det.png',
   'Orlando Magic': 'nba/500/orl.png',
   'Oklahoma City Thunder': 'nba/500/okc.png',
@@ -282,7 +304,19 @@ const TEAM_LOGO_FALLBACKS = {
   'Philadelphia 76ers': 'nba/500/phi.png',
   'Brooklyn Nets': 'nba/500/bkn.png',
   'Boston Celtics': 'nba/500/bos.png',
-  'Atlanta Hawks': 'nba/500/atl.png'
+  'Atlanta Hawks': 'nba/500/atl.png',
+  'Dallas Mavericks': 'nba/500/dal.png',
+  'Houston Rockets': 'nba/500/hou.png',
+  'Sacramento Kings': 'nba/500/sac.png',
+  'Chicago Bulls': 'nba/500/chi.png',
+  'Indiana Pacers': 'nba/500/ind.png',
+  'Toronto Raptors': 'nba/500/tor.png',
+  'Charlotte Hornets': 'nba/500/cha.png',
+  'Washington Wizards': 'nba/500/wsh.png',
+  'Portland Trail Blazers': 'nba/500/por.png',
+  'San Antonio Spurs': 'nba/500/sa.png',
+  'Utah Jazz': 'nba/500/utah.png',
+  'New Orleans Pelicans': 'nba/500/no.png'
 };
 
 function displayTeamName(name) {
