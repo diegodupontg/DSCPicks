@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DSC Picks - Brackets</title>
-  <link rel="stylesheet" href="style.css?v=20260428-1240">
+  <link rel="stylesheet" href="style.css?v=20260428-1305">
   <style>
     .bracket-toolbar {
       display: flex;
@@ -85,6 +85,9 @@
       gap: 18px;
       align-items: start;
     }
+    .bracket-side.three {
+      grid-template-columns: repeat(3, minmax(210px, 1fr));
+    }
     .bracket-center {
       display: grid;
       gap: 18px;
@@ -160,7 +163,7 @@
 
   <script src="config.js"></script>
   <script src="logos.js"></script>
-  <script src="app.js?v=20260428-1240"></script>
+  <script src="app.js?v=20260428-1305"></script>
   <script>
     if (!requireAuth()) throw new Error('redirect');
     renderNav('brackets');
@@ -232,7 +235,7 @@
         return;
       }
 
-      const firstRound = await firstRoundFromFixtures(slug);
+      const firstRound = await firstRoundForLeague(slug);
       renderKnockout(TEMPLATES[slug] || TEMPLATES['nba-playoffs'], firstRound);
     }
 
@@ -325,15 +328,76 @@
 
     function worldCupFirstRound() {
       const s = picksState[currentSlug];
-      const first = Object.keys(WORLD_CUP_GROUPS).map(g => s[`g-${g}-1`]);
-      const second = Object.keys(WORLD_CUP_GROUPS).map(g => s[`g-${g}-2`]);
+      const team = (group, pos, seed) => ({ name: s[`g-${group}-${pos}`], logo: '', seed });
       ensureThirdRanking();
+      const third = rank => {
+        const group = s[`best-third-rank-${rank}`];
+        return { name: s[`g-${group}-3`] || `Mejor 3º ${rank}`, logo: '', seed: `3${group}` };
+      };
       const thirds = Array.from({ length: 8 }).map((_, i) => {
         const group = s[`best-third-rank-${i + 1}`];
-        return s[`g-${group}-3`] || `Mejor 3º ${i + 1}`;
+        return { name: s[`g-${group}-3`] || `Mejor 3º ${i + 1}`, logo: '', seed: `3${group}` };
       });
-      const seeds = [...first, ...second, ...thirds];
-      return Array.from({ length: 16 }, (_, i) => [seeds[i], seeds[31 - i]]);
+      return [
+        [team('A', 1, '1A'), third(1)],
+        [team('B', 1, '1B'), third(2)],
+        [team('C', 1, '1C'), third(3)],
+        [team('D', 1, '1D'), third(4)],
+        [team('E', 1, '1E'), team('F', 2, '2F')],
+        [team('F', 1, '1F'), team('E', 2, '2E')],
+        [team('G', 1, '1G'), team('H', 2, '2H')],
+        [team('H', 1, '1H'), team('G', 2, '2G')],
+        [team('I', 1, '1I'), third(5)],
+        [team('J', 1, '1J'), third(6)],
+        [team('K', 1, '1K'), third(7)],
+        [team('L', 1, '1L'), third(8)],
+        [team('A', 2, '2A'), team('B', 2, '2B')],
+        [team('C', 2, '2C'), team('D', 2, '2D')],
+        [team('I', 2, '2I'), team('J', 2, '2J')],
+        [team('K', 2, '2K'), team('L', 2, '2L')]
+      ];
+    }
+
+    async function firstRoundForLeague(slug) {
+      if (slug === 'nba-playoffs' || slug === 'nba') {
+        const standings = await nbaFirstRoundFromStandings(slug);
+        if (standings?.length) return standings;
+      }
+      return firstRoundFromFixtures(slug);
+    }
+
+    async function nbaFirstRoundFromStandings(slug) {
+      const league = allLeagues.find(l => l.slug === slug || (slug === 'nba-playoffs' && l.slug === 'nba-playoffs'));
+      if (!league) return null;
+      try {
+        const data = await api(`/standings?league_id=${league.id}`);
+        const rows = data.standings || [];
+        if (rows.length < 16) return null;
+
+        const eastRows = rows.filter(r => /east|este/i.test(r.group || '')).slice(0, 8);
+        const westRows = rows.filter(r => /west|oeste/i.test(r.group || '')).slice(0, 8);
+        const east = eastRows.length >= 8 ? eastRows : rows.slice(0, 8);
+        const west = westRows.length >= 8 ? westRows : rows.slice(8, 16);
+        if (east.length < 8 || west.length < 8) return null;
+
+        return [
+          ...seededConferenceMatches(west, 'W'),
+          ...seededConferenceMatches(east, 'E')
+        ];
+      } catch {
+        return null;
+      }
+    }
+
+    function seededConferenceMatches(rows, prefix) {
+      return [[1,8], [4,5], [3,6], [2,7]].map(([a, b]) => [
+        standingTeam(rows[a - 1], `${prefix}${a}`),
+        standingTeam(rows[b - 1], `${prefix}${b}`)
+      ]);
+    }
+
+    function standingTeam(row, seed) {
+      return { name: row?.team || `Seed ${seed}`, logo: row?.logo || '', seed };
     }
 
     async function firstRoundFromFixtures(slug) {
@@ -411,21 +475,42 @@
       const area = document.getElementById('bracket-area');
       area.className = 'bracket-stage';
       const first = generated[0] || [];
+      const isWorldCup = currentSlug === 'mundial-2026';
       const west = first.slice(0, Math.ceil(first.length / 2));
       const east = first.slice(Math.ceil(first.length / 2));
-      const isWorldCup = currentSlug === 'mundial-2026';
+
+      if (isWorldCup) {
+        area.innerHTML = `
+          <div class="bracket-side three">
+            ${playoffColumn('Dieciseisavos', first.slice(0, 8), 0, 0)}
+            ${playoffColumn('Octavos', (generated[1] || []).slice(0, 4), 1, 0)}
+            ${playoffColumn('Cuartos', (generated[2] || []).slice(0, 2), 2, 0)}
+          </div>
+          <div class="bracket-center">
+            ${playoffColumn('Final', generated[4] || [], 4, 0)}
+            ${playoffColumn('Semifinales', generated[3] || [], 3, 0)}
+          </div>
+          <div class="bracket-side three">
+            ${playoffColumn('Cuartos', (generated[2] || []).slice(2, 4), 2, 2)}
+            ${playoffColumn('Octavos', (generated[1] || []).slice(4, 8), 1, 4)}
+            ${playoffColumn('Dieciseisavos', first.slice(8, 16), 0, 8)}
+          </div>
+        `;
+        return;
+      }
+
       area.innerHTML = `
         <div class="bracket-side">
-          ${playoffColumn(isWorldCup ? 'Dieciseisavos' : 'Oeste - 1º Ronda', west, 0, 0)}
-          ${playoffColumn(isWorldCup ? 'Octavos' : 'Oeste - Semis', generated[1]?.slice(0, Math.ceil((generated[1] || []).length / 2)) || [], 1, 0)}
+          ${playoffColumn('Oeste - 1º Ronda', west, 0, 0)}
+          ${playoffColumn('Oeste - Semis', generated[1]?.slice(0, Math.ceil((generated[1] || []).length / 2)) || [], 1, 0)}
         </div>
         <div class="bracket-center">
-          ${playoffColumn(isWorldCup ? 'Final' : 'Final NBA', generated[generated.length - 1] || [], generated.length - 1, 0)}
-          ${playoffColumn(isWorldCup ? 'Semifinales' : 'Finales de Conferencia', generated[generated.length - 2] || [], generated.length - 2, 0)}
+          ${playoffColumn('Final NBA', generated[generated.length - 1] || [], generated.length - 1, 0)}
+          ${playoffColumn('Finales de Conferencia', generated[generated.length - 2] || [], generated.length - 2, 0)}
         </div>
         <div class="bracket-side">
-          ${playoffColumn(isWorldCup ? 'Cuartos' : 'Este - Semis', generated[isWorldCup ? 2 : 1]?.slice(isWorldCup ? 0 : Math.ceil((generated[1] || []).length / 2)) || [], isWorldCup ? 2 : 1, isWorldCup ? 0 : Math.ceil((generated[1] || []).length / 2))}
-          ${playoffColumn(isWorldCup ? 'Dieciseisavos' : 'Este - 1º Ronda', east, 0, west.length)}
+          ${playoffColumn('Este - Semis', generated[1]?.slice(Math.ceil((generated[1] || []).length / 2)) || [], 1, Math.ceil((generated[1] || []).length / 2))}
+          ${playoffColumn('Este - 1º Ronda', east, 0, west.length)}
         </div>
       `;
     }
@@ -462,7 +547,7 @@
         <button class="bracket-team ${selected}" onclick="setWinner(${roundIdx}, ${matchIdx}, '${encodeURIComponent(obj.name)}', '${encodeURIComponent(obj.logo || '')}')">
           ${teamLogoHtml(obj.logo || '', obj.name, 'team-logo')}
           <span>${displayTeamName(obj.name)}</span>
-          <span class="bracket-seed">${matchIdx + 1}</span>
+          <span class="bracket-seed">${obj.seed || matchIdx + 1}</span>
         </button>
       `;
     }
