@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dupo Polla — Dashboard</title>
-  <link rel="stylesheet" href="style.css?v=20260428-1145">
+  <link rel="stylesheet" href="style.css?v=20260428-1215">
   <style>
     .hero {
       padding: 36px 0 24px;
@@ -182,7 +182,7 @@
 
   <script src="config.js"></script>
   <script src="logos.js"></script>
-  <script src="app.js?v=20260428-1145"></script>
+  <script src="app.js?v=20260428-1215"></script>
   <script>
     if (!requireAuth()) throw new Error('redirect');
 
@@ -330,7 +330,7 @@
               <span>${displayTeamName(p.home_team) || 'Partido'} vs ${displayTeamName(p.away_team) || 'por definir'}</span>
               ${teamLogoHtml(p.away_logo, p.away_team, 'team-logo')}
             </div>
-            <div class="expert-week">${p.league_name || ''}${p.broadcast ? ' · ' + p.broadcast : ''}</div>
+            <div class="expert-week">${p.league_name || ''}</div>
             ${p.title ? `<div class="expert-note"><strong>${p.title}</strong></div>` : ''}
             ${p.note ? `<div class="expert-note">${p.note}</div>` : ''}
           </div>

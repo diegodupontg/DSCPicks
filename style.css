@@ -624,6 +624,10 @@ h3 { font-size: 24px; }
   object-fit: contain;
   flex: 0 0 auto;
 }
+.team-logo.fallback-broken,
+.league-logo-img.fallback-broken {
+  visibility: hidden;
+}
 .team-logo.fallback {
   display: inline-grid;
   place-items: center;

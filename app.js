@@ -124,41 +124,67 @@ function renderNav(activePage = '') {
 }
 
 function leagueLogoHtml(league, cls = 'league-logo-img') {
-  if (league?.logo_url) return `<img class="${cls}" src="${league.logo_url}" alt="${league.name || 'Liga'}">`;
-  const fallbackUrl = leagueFallbackLogoUrl(league);
-  if (fallbackUrl) return `<img class="${cls}" src="${fallbackUrl}" alt="${league?.name || 'Liga'}">`;
+  const candidates = [
+    league?.logo_url,
+    ...leagueFallbackLogoUrls(league)
+  ].filter(Boolean);
+  if (candidates.length) return imageWithFallback(candidates, cls, league?.name || 'Liga');
   return `<span class="${cls} fallback">${league?.logo_emoji || 'T'}</span>`;
 }
 
-function leagueFallbackLogoUrl(league = {}) {
+function imageWithFallback(urls, cls, alt) {
+  const [src, ...rest] = urls;
+  const fallback = rest.length ? rest.join('|') : '';
+  return `<img class="${cls}" src="${src}" alt="${alt}" data-fallback="${fallback}" onerror="swapImageFallback(this)">`;
+}
+
+function swapImageFallback(img) {
+  const list = String(img.dataset.fallback || '').split('|').filter(Boolean);
+  if (!list.length) {
+    img.onerror = null;
+    img.classList.add('fallback-broken');
+    return;
+  }
+  img.dataset.fallback = list.slice(1).join('|');
+  img.src = list[0];
+}
+
+function leagueFallbackLogoUrls(league = {}) {
   const bySlug = {
-    'mundial-2026': 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/fifa.world.png&w=100&h=100',
-    'nba': 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/nba.png&w=100&h=100',
-    'nba-cup': 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/nba.png&w=100&h=100',
-    'nba-playoffs': 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/nba.png&w=100&h=100',
-    'laliga': 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/esp.1.png&w=100&h=100',
-    'premier-league': 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/eng.1.png&w=100&h=100',
-    'serie-a': 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/ita.1.png&w=100&h=100',
-    'mls': 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/usa.1.png&w=100&h=100',
-    'nfl': 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/nfl.png&w=100&h=100',
-    'mlb-playoffs': 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/mlb.png&w=100&h=100',
-    'nhl-playoffs': 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/nhl.png&w=100&h=100',
-    'uefa-champions-league': 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/uefa.champions.png&w=100&h=100',
-    'uefa-europa-league': 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/uefa.europa.png&w=100&h=100',
-    'uefa-conference-league': 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/uefa.europa.conf.png&w=100&h=100'
+    'mundial-2026': ['https://a.espncdn.com/i/leaguelogos/soccer/500/fifa.world.png', 'https://a.espncdn.com/i/teamlogos/leagues/500/fifa.world.png'],
+    'nba': ['https://a.espncdn.com/i/teamlogos/leagues/500/nba.png'],
+    'nba-cup': ['https://a.espncdn.com/i/teamlogos/leagues/500/nba.png'],
+    'nba-playoffs': ['https://a.espncdn.com/i/teamlogos/leagues/500/nba.png'],
+    'laliga': ['https://a.espncdn.com/i/leaguelogos/soccer/500/esp.1.png', 'https://a.espncdn.com/i/teamlogos/leagues/500/esp.1.png'],
+    'premier-league': ['https://a.espncdn.com/i/leaguelogos/soccer/500/eng.1.png'],
+    'serie-a': ['https://a.espncdn.com/i/leaguelogos/soccer/500/ita.1.png'],
+    'mls': ['https://a.espncdn.com/i/leaguelogos/soccer/500/usa.1.png'],
+    'nfl': ['https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png'],
+    'mlb-playoffs': ['https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png'],
+    'nhl-playoffs': ['https://a.espncdn.com/i/teamlogos/leagues/500/nhl.png'],
+    'uefa-champions-league': ['https://a.espncdn.com/i/leaguelogos/soccer/500/uefa.champions.png'],
+    'uefa-europa-league': ['https://a.espncdn.com/i/leaguelogos/soccer/500/uefa.europa.png'],
+    'uefa-conference-league': ['https://a.espncdn.com/i/leaguelogos/soccer/500/uefa.europa.conf.png']
   };
-  return bySlug[league.slug] || '';
+  return bySlug[league.slug] || [];
 }
 
 function teamLogoHtml(url, name, cls = 'team-logo') {
-  const fallbackUrl = url || espnCountryLogoUrl(name);
-  if (fallbackUrl) return `<img class="${cls}" src="${fallbackUrl}" alt="${name || 'Equipo'}">`;
+  const candidates = [url, espnCountryLogoUrl(name), espnTeamFallbackLogoUrl(name)].filter(Boolean);
+  if (candidates.length) return imageWithFallback(candidates, cls, name || 'Equipo');
   return `<span class="${cls} fallback">${(displayTeamName(name) || '?').slice(0, 1).toUpperCase()}</span>`;
 }
 
 function espnCountryLogoUrl(name) {
   const code = COUNTRY_CODES[String(name || '').trim()];
   return code ? `https://a.espncdn.com/combiner/i?img=/i/teamlogos/countries/500/${code}.png&w=100&h=100` : '';
+}
+
+function espnTeamFallbackLogoUrl(name) {
+  const ref = TEAM_LOGO_FALLBACKS[String(name || '').trim()];
+  if (!ref) return '';
+  if (ref.startsWith('http')) return ref;
+  return `https://a.espncdn.com/i/teamlogos/${ref}`;
 }
 
 const COUNTRY_ES = {
@@ -233,6 +259,30 @@ const COUNTRY_CODES = {
   'Spain': 'esp', 'Sweden': 'swe', 'Switzerland': 'sui', 'Tunisia': 'tun',
   'Turkiye': 'tur', 'Türkiye': 'tur', 'United States': 'usa', 'USA': 'usa',
   'Uruguay': 'uru', 'Uzbekistan': 'uzb'
+};
+
+const TEAM_LOGO_FALLBACKS = {
+  'Barcelona': 'soccer/500/83.png',
+  'Real Madrid': 'soccer/500/86.png',
+  'Detroit Pistons': 'nba/500/det.png',
+  'Orlando Magic': 'nba/500/orl.png',
+  'Oklahoma City Thunder': 'nba/500/okc.png',
+  'Phoenix Suns': 'nba/500/phx.png',
+  'Denver Nuggets': 'nba/500/den.png',
+  'Minnesota Timberwolves': 'nba/500/min.png',
+  'LA Clippers': 'nba/500/lac.png',
+  'Los Angeles Clippers': 'nba/500/lac.png',
+  'Golden State Warriors': 'nba/500/gs.png',
+  'Los Angeles Lakers': 'nba/500/lal.png',
+  'Memphis Grizzlies': 'nba/500/mem.png',
+  'Miami Heat': 'nba/500/mia.png',
+  'Milwaukee Bucks': 'nba/500/mil.png',
+  'Cleveland Cavaliers': 'nba/500/cle.png',
+  'New York Knicks': 'nba/500/ny.png',
+  'Philadelphia 76ers': 'nba/500/phi.png',
+  'Brooklyn Nets': 'nba/500/bkn.png',
+  'Boston Celtics': 'nba/500/bos.png',
+  'Atlanta Hawks': 'nba/500/atl.png'
 };
 
 function displayTeamName(name) {

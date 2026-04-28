@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dupo Polla - Admin</title>
-  <link rel="stylesheet" href="style.css?v=20260428-1145">
+  <link rel="stylesheet" href="style.css?v=20260428-1215">
   <style>
     .admin-grid {
       display: grid;
@@ -53,7 +53,7 @@
           </div>
           <label class="flex-center gap-8" style="margin-top:26px;">
             <input type="checkbox" id="sync-only-espn">
-            <span class="text-sm text-muted">Solo eventos con broadcast ESPN</span>
+            <span class="text-sm text-muted">Solo eventos destacados</span>
           </label>
         </div>
         <button class="btn btn-accent mt-16" id="btn-sync" onclick="syncESPN()">Actualizar partidos</button>
@@ -109,7 +109,7 @@
 
   <script src="config.js"></script>
   <script src="logos.js"></script>
-  <script src="app.js?v=20260428-1145"></script>
+  <script src="app.js?v=20260428-1215"></script>
   <script>
     if (!requireAdmin()) throw new Error('redirect');
     renderNav('admin');

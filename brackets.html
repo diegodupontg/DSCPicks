@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DSC Picks - Brackets</title>
-  <link rel="stylesheet" href="style.css?v=20260428-1145">
+  <link rel="stylesheet" href="style.css?v=20260428-1215">
   <style>
     .bracket-toolbar {
       display: flex;
@@ -17,7 +17,7 @@
     .bracket-board {
       display: grid;
       grid-auto-flow: column;
-      grid-auto-columns: minmax(220px, 1fr);
+      grid-auto-columns: minmax(230px, 1fr);
       gap: 18px;
       overflow-x: auto;
       padding-bottom: 16px;
@@ -43,10 +43,55 @@
     }
     .group-row {
       display: grid;
-      grid-template-columns: 32px 1fr;
+      grid-template-columns: 34px 1fr;
       gap: 8px;
       align-items: center;
       margin-top: 8px;
+    }
+    .thirds-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin: 0 0 24px;
+    }
+    .thirds-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .third-check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 10px;
+      border-radius: var(--radius-sm);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+    }
+    .bracket-stage {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(220px, .8fr) minmax(0, 1fr);
+      gap: 18px;
+      align-items: center;
+      overflow-x: auto;
+      padding-bottom: 16px;
+    }
+    .bracket-side {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(210px, 1fr));
+      gap: 18px;
+      align-items: start;
+    }
+    .bracket-center {
+      display: grid;
+      gap: 18px;
+      align-content: center;
+      min-width: 220px;
+    }
+    .bracket-board.compact {
+      grid-auto-columns: minmax(210px, 1fr);
     }
     .bracket-round {
       display: grid;
@@ -114,7 +159,7 @@
 
   <script src="config.js"></script>
   <script src="logos.js"></script>
-  <script src="app.js?v=20260428-1145"></script>
+  <script src="app.js?v=20260428-1215"></script>
   <script>
     if (!requireAuth()) throw new Error('redirect');
     renderNav('brackets');
@@ -192,35 +237,84 @@
 
     function renderWorldCupGroups() {
       const area = document.getElementById('groups-area');
-      area.innerHTML = `<div class="worldcup-groups">
+      area.innerHTML = worldCupGroupsHtml();
+    }
+
+    function worldCupGroupsHtml() {
+      return `<div class="worldcup-groups">
         ${Object.entries(WORLD_CUP_GROUPS).map(([group, teams]) => groupCard(group, teams)).join('')}
       </div>`;
     }
 
     function groupCard(group, teams) {
       const saved = picksState[currentSlug];
-      if (!saved[`g-${group}-1`]) saved[`g-${group}-1`] = teams[0];
-      if (!saved[`g-${group}-2`]) saved[`g-${group}-2`] = teams[1];
+      [1, 2, 3, 4].forEach(pos => {
+        if (!saved[`g-${group}-${pos}`]) saved[`g-${group}-${pos}`] = teams[pos - 1];
+      });
       return `
         <section class="group-card">
           <div class="group-title">Grupo ${group}</div>
-          <div class="group-row">
-            <span class="bracket-seed">1º</span>
-            <select class="form-select" onchange="setGroupPick('${group}', 1, this.value)">
-              ${teams.map(t => `<option value="${t}" ${saved[`g-${group}-1`] === t ? 'selected' : ''}>${displayTeamName(t)}</option>`).join('')}
-            </select>
-          </div>
-          <div class="group-row">
-            <span class="bracket-seed">2º</span>
-            <select class="form-select" onchange="setGroupPick('${group}', 2, this.value)">
-              ${teams.map(t => `<option value="${t}" ${saved[`g-${group}-2`] === t ? 'selected' : ''}>${displayTeamName(t)}</option>`).join('')}
-            </select>
-          </div>
+          ${[1,2,3,4].map(pos => `
+            <div class="group-row">
+              <span class="bracket-seed">${pos}º</span>
+              <select class="form-select" onchange="setGroupPick('${group}', ${pos}, this.value)">
+                ${teams.map(t => `<option value="${t}" ${saved[`g-${group}-${pos}`] === t ? 'selected' : ''}>${displayTeamName(t)}</option>`).join('')}
+              </select>
+            </div>
+          `).join('')}
         </section>`;
     }
 
     function setGroupPick(group, pos, value) {
       picksState[currentSlug][`g-${group}-${pos}`] = value;
+      ensureBestThirds();
+      renderWorldCupGroups();
+      renderKnockout(TEMPLATES[currentSlug], worldCupFirstRound());
+    }
+
+    function ensureBestThirds() {
+      const s = picksState[currentSlug];
+      const groups = Object.keys(WORLD_CUP_GROUPS);
+      let selected = groups.filter(g => s[`best-third-${g}`]);
+      if (!selected.length) {
+        groups.slice(0, 8).forEach(g => { s[`best-third-${g}`] = true; });
+        selected = groups.slice(0, 8);
+      }
+      while (selected.length > 8) {
+        const g = selected.pop();
+        s[`best-third-${g}`] = false;
+      }
+    }
+
+    function bestThirdsPanel() {
+      ensureBestThirds();
+      const s = picksState[currentSlug];
+      return `
+        <section class="thirds-panel">
+          <div class="group-title">Mejores terceros</div>
+          <div class="thirds-grid">
+            ${Object.keys(WORLD_CUP_GROUPS).map(g => {
+              const team = s[`g-${g}-3`];
+              return `<label class="third-check">
+                <input type="checkbox" ${s[`best-third-${g}`] ? 'checked' : ''} onchange="toggleBestThird('${g}', this.checked)">
+                ${teamLogoHtml('', team, 'team-logo')}
+                <span>${displayTeamName(team)} <span class="bracket-seed">Grupo ${g}</span></span>
+              </label>`;
+            }).join('')}
+          </div>
+        </section>`;
+    }
+
+    function toggleBestThird(group, checked) {
+      const s = picksState[currentSlug];
+      const count = Object.keys(WORLD_CUP_GROUPS).filter(g => s[`best-third-${g}`]).length;
+      if (checked && count >= 8) {
+        event.target.checked = false;
+        toast('Solo pueden pasar 8 terceros', 'error');
+        return;
+      }
+      s[`best-third-${group}`] = checked;
+      renderWorldCupGroups();
       renderKnockout(TEMPLATES[currentSlug], worldCupFirstRound());
     }
 
@@ -228,7 +322,10 @@
       const s = picksState[currentSlug];
       const first = Object.keys(WORLD_CUP_GROUPS).map(g => s[`g-${g}-1`]);
       const second = Object.keys(WORLD_CUP_GROUPS).map(g => s[`g-${g}-2`]);
-      const thirds = ['Mejor 3º A', 'Mejor 3º B', 'Mejor 3º C', 'Mejor 3º D', 'Mejor 3º E', 'Mejor 3º F', 'Mejor 3º G', 'Mejor 3º H'];
+      const thirds = Object.keys(WORLD_CUP_GROUPS)
+        .filter(g => s[`best-third-${g}`])
+        .map(g => s[`g-${g}-3`] || `3º Grupo ${g}`);
+      while (thirds.length < 8) thirds.push(`Mejor 3º ${thirds.length + 1}`);
       const seeds = [...first, ...second, ...thirds];
       return Array.from({ length: 16 }, (_, i) => [seeds[i], seeds[31 - i]]);
     }
@@ -257,6 +354,9 @@
     }
 
     function renderKnockout(rounds, firstMatches) {
+      if (currentSlug === 'mundial-2026') {
+        document.getElementById('groups-area').innerHTML = worldCupGroupsHtml() + bestThirdsPanel();
+      }
       const generated = [firstMatches];
       for (let r = 1; r < rounds.length; r++) {
         const prev = generated[r - 1];
@@ -266,12 +366,48 @@
         ]);
       }
 
-      document.getElementById('bracket-area').innerHTML = rounds.map((round, idx) => `
+      if (currentSlug === 'nba-playoffs') {
+        renderPlayoffLayout(rounds, generated);
+        return;
+      }
+
+      const area = document.getElementById('bracket-area');
+      area.className = 'bracket-board';
+      area.innerHTML = rounds.map((round, idx) => `
         <section class="bracket-round">
           <div class="bracket-round-title">${round}</div>
           ${generated[idx].map((match, i) => bracketMatch(match, idx, i)).join('')}
         </section>
       `).join('');
+    }
+
+    function renderPlayoffLayout(rounds, generated) {
+      const area = document.getElementById('bracket-area');
+      area.className = 'bracket-stage';
+      const first = generated[0] || [];
+      const west = first.slice(0, Math.ceil(first.length / 2));
+      const east = first.slice(Math.ceil(first.length / 2));
+      area.innerHTML = `
+        <div class="bracket-side">
+          ${playoffColumn('Oeste - 1º Ronda', west, 0, 0)}
+          ${playoffColumn('Oeste - Semis', generated[1]?.slice(0, Math.ceil((generated[1] || []).length / 2)) || [], 1, 0)}
+        </div>
+        <div class="bracket-center">
+          ${playoffColumn('Final NBA', generated[3] || generated[generated.length - 1] || [], 3, 0)}
+          ${playoffColumn('Finales de Conferencia', generated[2] || [], 2, 0)}
+        </div>
+        <div class="bracket-side">
+          ${playoffColumn('Este - Semis', generated[1]?.slice(Math.ceil((generated[1] || []).length / 2)) || [], 1, Math.ceil((generated[1] || []).length / 2))}
+          ${playoffColumn('Este - 1º Ronda', east, 0, west.length)}
+        </div>
+      `;
+    }
+
+    function playoffColumn(title, matches, roundIdx, offset) {
+      return `<section class="bracket-round">
+        <div class="bracket-round-title">${title}</div>
+        ${matches.map((match, i) => bracketMatch(match, roundIdx, i + offset)).join('')}
+      </section>`;
     }
 
     function winnerLabel(roundIdx, matchIdx) {
