@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dupo Polla — Dashboard</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=20260428-1145">
   <style>
     .hero {
       padding: 36px 0 24px;
@@ -182,12 +182,15 @@
 
   <script src="config.js"></script>
   <script src="logos.js"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=20260428-1145"></script>
   <script>
     if (!requireAuth()) throw new Error('redirect');
 
     const user = getUser();
     renderNav('dashboard');
+    if (typeof displayTeamName !== 'function') {
+      window.displayTeamName = name => String(name || '');
+    }
     document.getElementById('hero-name').innerHTML =
       (user.display_name || user.username).toUpperCase().split('').map((c,i) =>
         i===0 ? `<em>${c}</em>` : c

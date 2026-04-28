@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DSC Picks - Brackets</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=20260428-1145">
   <style>
     .bracket-toolbar {
       display: flex;
@@ -21,6 +21,32 @@
       gap: 18px;
       overflow-x: auto;
       padding-bottom: 16px;
+    }
+    .worldcup-groups {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .group-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+    }
+    .group-title {
+      font-family: var(--font-display);
+      color: var(--accent);
+      font-size: 20px;
+      letter-spacing: .5px;
+      margin-bottom: 10px;
+    }
+    .group-row {
+      display: grid;
+      grid-template-columns: 32px 1fr;
+      gap: 8px;
+      align-items: center;
+      margin-top: 8px;
     }
     .bracket-round {
       display: grid;
@@ -82,15 +108,19 @@
       </div>
     </div>
 
+    <div id="groups-area"></div>
     <div id="bracket-area" class="bracket-board"></div>
   </main>
 
   <script src="config.js"></script>
   <script src="logos.js"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=20260428-1145"></script>
   <script>
     if (!requireAuth()) throw new Error('redirect');
     renderNav('brackets');
+    if (typeof displayTeamName !== 'function') {
+      window.displayTeamName = name => String(name || '');
+    }
 
     const ELIGIBLE_SLUGS = new Set([
       'mundial-2026',
@@ -116,59 +146,171 @@
       'nhl-playoffs': ['Primera ronda', 'Semifinal conf.', 'Final conf.', 'Stanley Cup']
     };
 
-    const ROUND_MATCHES = {
-      'mundial-2026': [16, 8, 4, 2, 1],
-      'nfl': [6, 4, 2, 1],
-      default: [8, 4, 2, 1]
+    const WORLD_CUP_GROUPS = {
+      A: ['Mexico', 'South Africa', 'South Korea', 'Czechia'],
+      B: ['Canada', 'Qatar', 'Switzerland', 'Bosnia-Herzegovina'],
+      C: ['Brazil', 'Morocco', 'Scotland', 'Haiti'],
+      D: ['United States', 'Paraguay', 'Australia', 'Turkiye'],
+      E: ['Germany', 'Ecuador', 'Ivory Coast', 'Curacao'],
+      F: ['Netherlands', 'Japan', 'Tunisia', 'Sweden'],
+      G: ['Belgium', 'Iran', 'Egypt', 'New Zealand'],
+      H: ['Spain', 'Uruguay', 'Saudi Arabia', 'Cape Verde'],
+      I: ['France', 'Senegal', 'Norway', 'Iraq'],
+      J: ['Argentina', 'Austria', 'Algeria', 'Jordan'],
+      K: ['Portugal', 'Colombia', 'Uzbekistan', 'Congo DR'],
+      L: ['England', 'Croatia', 'Panama', 'Ghana']
     };
+
+    let allLeagues = [];
+    let currentSlug = '';
+    let picksState = {};
 
     async function init() {
       const select = document.getElementById('league-select');
       const leagues = await api('/leagues');
-      const eligible = leagues.filter(l => ELIGIBLE_SLUGS.has(l.slug));
+      allLeagues = leagues.filter(l => ELIGIBLE_SLUGS.has(l.slug));
+      const eligible = allLeagues;
       select.innerHTML = eligible.map(l => `<option value="${l.slug}">${l.name}</option>`).join('');
       select.onchange = () => renderBracket(select.value);
-      renderBracket(select.value || 'mundial-2026');
+      await renderBracket(select.value || 'mundial-2026');
     }
 
-    function renderBracket(slug) {
-      const area = document.getElementById('bracket-area');
-      const rounds = TEMPLATES[slug] || TEMPLATES['mundial-2026'];
-      const counts = ROUND_MATCHES[slug] || ROUND_MATCHES.default;
-      area.innerHTML = rounds.map((round, idx) => `
+    async function renderBracket(slug) {
+      currentSlug = slug;
+      picksState = picksState[slug] ? picksState : { ...picksState, [slug]: {} };
+      document.getElementById('groups-area').innerHTML = '';
+
+      if (slug === 'mundial-2026') {
+        renderWorldCupGroups();
+        renderKnockout(TEMPLATES[slug], worldCupFirstRound());
+        return;
+      }
+
+      const firstRound = await firstRoundFromFixtures(slug);
+      renderKnockout(TEMPLATES[slug] || TEMPLATES['nba-playoffs'], firstRound);
+    }
+
+    function renderWorldCupGroups() {
+      const area = document.getElementById('groups-area');
+      area.innerHTML = `<div class="worldcup-groups">
+        ${Object.entries(WORLD_CUP_GROUPS).map(([group, teams]) => groupCard(group, teams)).join('')}
+      </div>`;
+    }
+
+    function groupCard(group, teams) {
+      const saved = picksState[currentSlug];
+      if (!saved[`g-${group}-1`]) saved[`g-${group}-1`] = teams[0];
+      if (!saved[`g-${group}-2`]) saved[`g-${group}-2`] = teams[1];
+      return `
+        <section class="group-card">
+          <div class="group-title">Grupo ${group}</div>
+          <div class="group-row">
+            <span class="bracket-seed">1º</span>
+            <select class="form-select" onchange="setGroupPick('${group}', 1, this.value)">
+              ${teams.map(t => `<option value="${t}" ${saved[`g-${group}-1`] === t ? 'selected' : ''}>${displayTeamName(t)}</option>`).join('')}
+            </select>
+          </div>
+          <div class="group-row">
+            <span class="bracket-seed">2º</span>
+            <select class="form-select" onchange="setGroupPick('${group}', 2, this.value)">
+              ${teams.map(t => `<option value="${t}" ${saved[`g-${group}-2`] === t ? 'selected' : ''}>${displayTeamName(t)}</option>`).join('')}
+            </select>
+          </div>
+        </section>`;
+    }
+
+    function setGroupPick(group, pos, value) {
+      picksState[currentSlug][`g-${group}-${pos}`] = value;
+      renderKnockout(TEMPLATES[currentSlug], worldCupFirstRound());
+    }
+
+    function worldCupFirstRound() {
+      const s = picksState[currentSlug];
+      const first = Object.keys(WORLD_CUP_GROUPS).map(g => s[`g-${g}-1`]);
+      const second = Object.keys(WORLD_CUP_GROUPS).map(g => s[`g-${g}-2`]);
+      const thirds = ['Mejor 3º A', 'Mejor 3º B', 'Mejor 3º C', 'Mejor 3º D', 'Mejor 3º E', 'Mejor 3º F', 'Mejor 3º G', 'Mejor 3º H'];
+      const seeds = [...first, ...second, ...thirds];
+      return Array.from({ length: 16 }, (_, i) => [seeds[i], seeds[31 - i]]);
+    }
+
+    async function firstRoundFromFixtures(slug) {
+      const league = allLeagues.find(l => l.slug === slug);
+      if (!league) return fallbackFirstRound(slug);
+      try {
+        const rounds = await api(`/rounds?league_id=${league.id}`);
+        const first = rounds.find(r => /1|primera|wild|octavos/i.test(r.name)) || rounds[0];
+        if (!first) return fallbackFirstRound(slug);
+        const fixtures = await api(`/fixtures?round_id=${first.id}`);
+        if (!fixtures.length) return fallbackFirstRound(slug);
+        return fixtures.map(f => [
+          { name: f.home_team, logo: f.home_logo },
+          { name: f.away_team, logo: f.away_logo }
+        ]);
+      } catch {
+        return fallbackFirstRound(slug);
+      }
+    }
+
+    function fallbackFirstRound(slug) {
+      const count = slug === 'nfl' ? 6 : 8;
+      return Array.from({ length: count }, (_, i) => [`Equipo ${i + 1}A`, `Equipo ${i + 1}B`]);
+    }
+
+    function renderKnockout(rounds, firstMatches) {
+      const generated = [firstMatches];
+      for (let r = 1; r < rounds.length; r++) {
+        const prev = generated[r - 1];
+        generated[r] = Array.from({ length: Math.ceil(prev.length / 2) }, (_, i) => [
+          winnerObj(r - 1, i * 2) || `Ganador ${i * 2 + 1}`,
+          winnerObj(r - 1, i * 2 + 1) || `Ganador ${i * 2 + 2}`
+        ]);
+      }
+
+      document.getElementById('bracket-area').innerHTML = rounds.map((round, idx) => `
         <section class="bracket-round">
           <div class="bracket-round-title">${round}</div>
-          ${Array.from({ length: counts[idx] || 1 }).map((_, i) => bracketMatch(round, i + 1, idx)).join('')}
+          ${generated[idx].map((match, i) => bracketMatch(match, idx, i)).join('')}
         </section>
       `).join('');
     }
 
-    function bracketMatch(round, matchNo, roundIdx) {
-      const a = roundIdx === 0 ? placeholderSeed(round, matchNo, 1) : `Ganador ${matchNo * 2 - 1}`;
-      const b = roundIdx === 0 ? placeholderSeed(round, matchNo, 2) : `Ganador ${matchNo * 2}`;
+    function winnerLabel(roundIdx, matchIdx) {
+      return winnerObj(roundIdx, matchIdx)?.name || '';
+    }
+
+    function winnerObj(roundIdx, matchIdx) {
+      const winner = picksState[currentSlug][`w-${roundIdx}-${matchIdx}`];
+      return winner ? (typeof winner === 'object' ? winner : { name: winner, logo: '' }) : null;
+    }
+
+    function bracketMatch(match, roundIdx, matchIdx) {
       return `
         <div class="bracket-match">
-          ${bracketTeam(a, matchNo)}
-          ${bracketTeam(b, matchNo)}
+          ${bracketTeam(match[0], roundIdx, matchIdx)}
+          ${bracketTeam(match[1], roundIdx, matchIdx)}
         </div>
       `;
     }
 
-    function placeholderSeed(round, matchNo, side) {
-      if (round === 'Dieciseisavos') {
-        return side === 1 ? `Clasificado ${matchNo}A` : `Clasificado ${matchNo}B`;
-      }
-      return side === 1 ? `Equipo ${matchNo}A` : `Equipo ${matchNo}B`;
-    }
-
-    function bracketTeam(name, seed) {
+    function bracketTeam(team, roundIdx, matchIdx) {
+      const obj = typeof team === 'object' ? team : { name: team, logo: '' };
+      const selected = winnerLabel(roundIdx, matchIdx) === obj.name ? 'selected' : '';
       return `
-        <button class="bracket-team" onclick="this.parentElement.querySelectorAll('.bracket-team').forEach(b => b.classList.remove('selected')); this.classList.add('selected');">
-          ${teamLogoHtml('', name, 'team-logo')}
-          <span>${displayTeamName(name)}</span>
-          <span class="bracket-seed">${seed}</span>
+        <button class="bracket-team ${selected}" onclick="setWinner(${roundIdx}, ${matchIdx}, '${encodeURIComponent(obj.name)}', '${encodeURIComponent(obj.logo || '')}')">
+          ${teamLogoHtml(obj.logo || '', obj.name, 'team-logo')}
+          <span>${displayTeamName(obj.name)}</span>
+          <span class="bracket-seed">${matchIdx + 1}</span>
         </button>
       `;
+    }
+
+    function setWinner(roundIdx, matchIdx, name, logo) {
+      picksState[currentSlug][`w-${roundIdx}-${matchIdx}`] = {
+        name: decodeURIComponent(name),
+        logo: decodeURIComponent(logo || '')
+      };
+      if (currentSlug === 'mundial-2026') renderKnockout(TEMPLATES[currentSlug], worldCupFirstRound());
+      else renderBracket(currentSlug);
     }
 
     init().catch(e => {

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dupo Polla - Admin</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=20260428-1145">
   <style>
     .admin-grid {
       display: grid;
@@ -81,8 +81,8 @@
           </div>
         </div>
         <div class="form-group mt-12">
-          <label class="form-label">ID del partido</label>
-          <input id="expert-fixture" class="form-input" placeholder="Ej: 1001">
+          <label class="form-label">Pick elegido por el experto</label>
+          <select id="expert-fixture" class="form-select"></select>
         </div>
         <div class="form-group mt-12">
           <label class="form-label">Titulo</label>
@@ -109,7 +109,7 @@
 
   <script src="config.js"></script>
   <script src="logos.js"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=20260428-1145"></script>
   <script>
     if (!requireAdmin()) throw new Error('redirect');
     renderNav('admin');
@@ -127,6 +127,8 @@
         .join('');
       applyLeagueDates();
       document.getElementById('sync-league').addEventListener('change', applyLeagueDates);
+      document.getElementById('expert-user').addEventListener('change', loadExpertUserPicks);
+      await loadExpertUserPicks();
       if (isSuperAdmin()) {
         loadAdminUsers();
         renderLeagueVisibility(leagues);
@@ -176,7 +178,7 @@
             expert_user_id: Number(document.getElementById('expert-user').value),
             fixture_id: Number(document.getElementById('expert-fixture').value),
             week_label: document.getElementById('expert-week').value.trim(),
-            pick: document.getElementById('expert-pick').value,
+            pick: document.getElementById('expert-fixture').selectedOptions[0]?.dataset?.pick || document.getElementById('expert-pick').value,
             title: document.getElementById('expert-title').value.trim(),
             note: document.getElementById('expert-note').value.trim()
           }
@@ -188,6 +190,44 @@
         btn.disabled = false;
         btn.textContent = 'Guardar pick';
       }
+    }
+
+    async function loadExpertUserPicks() {
+      const select = document.getElementById('expert-fixture');
+      const pickSelect = document.getElementById('expert-pick');
+      const userId = document.getElementById('expert-user').value;
+      select.innerHTML = '<option>Cargando picks...</option>';
+      try {
+        const picks = await api(`/admin/user-picks?user_id=${userId}`);
+        if (!picks.length) {
+          select.innerHTML = '<option value="">Ese experto todavia no guardo picks</option>';
+          pickSelect.disabled = false;
+          return;
+        }
+        select.innerHTML = picks.map(p => `
+          <option value="${p.fixture_id}" data-pick="${p.pick}" data-round="${p.round_name}">
+            ${p.round_name} · ${pickLabelAdmin(p.pick, p.home_team, p.away_team)} · ${displayTeamName(p.home_team)} vs ${displayTeamName(p.away_team)}
+          </option>
+        `).join('');
+        applyExpertPickSelection();
+        select.onchange = applyExpertPickSelection;
+      } catch(e) {
+        select.innerHTML = `<option value="">${e.message}</option>`;
+      }
+    }
+
+    function applyExpertPickSelection() {
+      const opt = document.getElementById('expert-fixture').selectedOptions[0];
+      if (!opt) return;
+      document.getElementById('expert-pick').value = opt.dataset.pick || '1';
+      document.getElementById('expert-pick').disabled = true;
+      if (opt.dataset.round) document.getElementById('expert-week').value = opt.dataset.round;
+    }
+
+    function pickLabelAdmin(pick, home, away) {
+      if (pick === '1') return `1 - ${displayTeamName(home)}`;
+      if (pick === '2') return `2 - ${displayTeamName(away)}`;
+      return 'X - Empate';
     }
 
     async function loadAdminUsers() {

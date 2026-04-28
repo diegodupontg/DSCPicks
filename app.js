@@ -125,44 +125,40 @@ function renderNav(activePage = '') {
 
 function leagueLogoHtml(league, cls = 'league-logo-img') {
   if (league?.logo_url) return `<img class="${cls}" src="${league.logo_url}" alt="${league.name || 'Liga'}">`;
-  return `<span class="${cls} fallback">${leagueFallbackBadge(league)}</span>`;
+  const fallbackUrl = leagueFallbackLogoUrl(league);
+  if (fallbackUrl) return `<img class="${cls}" src="${fallbackUrl}" alt="${league?.name || 'Liga'}">`;
+  return `<span class="${cls} fallback">${league?.logo_emoji || 'T'}</span>`;
 }
 
-function leagueFallbackBadge(league = {}) {
+function leagueFallbackLogoUrl(league = {}) {
   const bySlug = {
-    'mundial-2026': '🌎',
-    'nba': '🏀',
-    'nba-cup': '🏀',
-    'nba-playoffs': '🏀',
-    'laliga': '🇪🇸',
-    'premier-league': '🏴',
-    'serie-a': '🇮🇹',
-    'mls': '🇺🇸',
-    'liga-1-peru': '🇵🇪',
-    'liga-rusa': '🇷🇺',
-    'nfl': '🏈',
-    'mlb-playoffs': '⚾',
-    'nhl-playoffs': '🏒',
-    'uefa-champions-league': '⭐',
-    'uefa-europa-league': '🏆',
-    'uefa-conference-league': '🏆',
-    'uefa-womens-champions': '⭐',
-    'eliminatorias-conmebol': '🌎',
-    'eliminatorias-uefa': '🇪🇺',
-    'eliminatorias-concacaf': '🌎',
-    'eliminatorias-afc': '🌏',
-    'eliminatorias-caf': '🌍',
-    'amistosos-internacionales': '🌐'
+    'mundial-2026': 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/fifa.world.png&w=100&h=100',
+    'nba': 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/nba.png&w=100&h=100',
+    'nba-cup': 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/nba.png&w=100&h=100',
+    'nba-playoffs': 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/nba.png&w=100&h=100',
+    'laliga': 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/esp.1.png&w=100&h=100',
+    'premier-league': 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/eng.1.png&w=100&h=100',
+    'serie-a': 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/ita.1.png&w=100&h=100',
+    'mls': 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/usa.1.png&w=100&h=100',
+    'nfl': 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/nfl.png&w=100&h=100',
+    'mlb-playoffs': 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/mlb.png&w=100&h=100',
+    'nhl-playoffs': 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/leagues/500/nhl.png&w=100&h=100',
+    'uefa-champions-league': 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/uefa.champions.png&w=100&h=100',
+    'uefa-europa-league': 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/uefa.europa.png&w=100&h=100',
+    'uefa-conference-league': 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/uefa.europa.conf.png&w=100&h=100'
   };
-  return bySlug[league.slug] || league.logo_emoji || '🏆';
+  return bySlug[league.slug] || '';
 }
 
 function teamLogoHtml(url, name, cls = 'team-logo') {
-  if (!url) {
-    const flag = countryFlag(name);
-    return `<span class="${cls} fallback">${flag || (displayTeamName(name) || '?').slice(0, 1).toUpperCase()}</span>`;
-  }
-  return `<img class="${cls}" src="${url}" alt="${name || 'Equipo'}">`;
+  const fallbackUrl = url || espnCountryLogoUrl(name);
+  if (fallbackUrl) return `<img class="${cls}" src="${fallbackUrl}" alt="${name || 'Equipo'}">`;
+  return `<span class="${cls} fallback">${(displayTeamName(name) || '?').slice(0, 1).toUpperCase()}</span>`;
+}
+
+function espnCountryLogoUrl(name) {
+  const code = COUNTRY_CODES[String(name || '').trim()];
+  return code ? `https://a.espncdn.com/combiner/i?img=/i/teamlogos/countries/500/${code}.png&w=100&h=100` : '';
 }
 
 const COUNTRY_ES = {
@@ -222,30 +218,26 @@ const COUNTRY_ES = {
   'Uzbekistan': 'Uzbekistan'
 };
 
-const COUNTRY_FLAGS = {
-  'Argentina': '🇦🇷', 'Algeria': '🇩🇿', 'Australia': '🇦🇺', 'Austria': '🇦🇹',
-  'Belgium': '🇧🇪', 'Bosnia-Herzegovina': '🇧🇦', 'Brazil': '🇧🇷', 'Canada': '🇨🇦',
-  'Cape Verde': '🇨🇻', 'Colombia': '🇨🇴', 'Congo DR': '🇨🇩', 'Croatia': '🇭🇷',
-  'Curacao': '🇨🇼', 'Czechia': '🇨🇿', 'Czech Republic': '🇨🇿', 'DR Congo': '🇨🇩',
-  'Ecuador': '🇪🇨', 'Egypt': '🇪🇬', 'England': '🏴', 'France': '🇫🇷',
-  'Germany': '🇩🇪', 'Ghana': '🇬🇭', 'Haiti': '🇭🇹', 'Iran': '🇮🇷',
-  'IR Iran': '🇮🇷', 'Iraq': '🇮🇶', 'Ivory Coast': '🇨🇮', 'Japan': '🇯🇵',
-  'Jordan': '🇯🇴', 'Mexico': '🇲🇽', 'Morocco': '🇲🇦', 'Netherlands': '🇳🇱',
-  'New Zealand': '🇳🇿', 'Norway': '🇳🇴', 'Panama': '🇵🇦', 'Paraguay': '🇵🇾',
-  'Portugal': '🇵🇹', 'Qatar': '🇶🇦', 'Saudi Arabia': '🇸🇦', 'Scotland': '🏴',
-  'Senegal': '🇸🇳', 'South Africa': '🇿🇦', 'South Korea': '🇰🇷', 'Korea Republic': '🇰🇷',
-  'Spain': '🇪🇸', 'Sweden': '🇸🇪', 'Switzerland': '🇨🇭', 'Tunisia': '🇹🇳',
-  'Turkiye': '🇹🇷', 'Türkiye': '🇹🇷', 'United States': '🇺🇸', 'USA': '🇺🇸',
-  'Uruguay': '🇺🇾', 'Uzbekistan': '🇺🇿'
+const COUNTRY_CODES = {
+  'Argentina': 'arg', 'Algeria': 'alg', 'Australia': 'aus', 'Austria': 'aut',
+  'Belgium': 'bel', 'Bosnia-Herzegovina': 'bih', 'Brazil': 'bra', 'Canada': 'can',
+  'Cape Verde': 'cpv', 'Colombia': 'col', 'Congo DR': 'cod', 'Croatia': 'cro',
+  'Curacao': 'cuw', 'Czechia': 'cze', 'Czech Republic': 'cze', 'DR Congo': 'cod',
+  'Ecuador': 'ecu', 'Egypt': 'egy', 'England': 'eng', 'France': 'fra',
+  'Germany': 'ger', 'Ghana': 'gha', 'Haiti': 'hai', 'Iran': 'irn',
+  'IR Iran': 'irn', 'Iraq': 'irq', 'Ivory Coast': 'civ', 'Japan': 'jpn',
+  'Jordan': 'jor', 'Mexico': 'mex', 'Morocco': 'mar', 'Netherlands': 'ned',
+  'New Zealand': 'nzl', 'Norway': 'nor', 'Panama': 'pan', 'Paraguay': 'par',
+  'Portugal': 'por', 'Qatar': 'qat', 'Saudi Arabia': 'ksa', 'Scotland': 'sco',
+  'Senegal': 'sen', 'South Africa': 'rsa', 'South Korea': 'kor', 'Korea Republic': 'kor',
+  'Spain': 'esp', 'Sweden': 'swe', 'Switzerland': 'sui', 'Tunisia': 'tun',
+  'Turkiye': 'tur', 'Türkiye': 'tur', 'United States': 'usa', 'USA': 'usa',
+  'Uruguay': 'uru', 'Uzbekistan': 'uzb'
 };
 
 function displayTeamName(name) {
   const key = String(name || '').trim();
   return COUNTRY_ES[key] || key;
-}
-
-function countryFlag(name) {
-  return COUNTRY_FLAGS[String(name || '').trim()] || '';
 }
 
 function isExpertAccount(user = getUser()) {
