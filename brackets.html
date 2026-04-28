@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DSC Picks - Brackets</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .bracket-toolbar {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+    .bracket-board {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(220px, 1fr);
+      gap: 18px;
+      overflow-x: auto;
+      padding-bottom: 16px;
+    }
+    .bracket-round {
+      display: grid;
+      gap: 14px;
+      align-content: start;
+      min-width: 220px;
+    }
+    .bracket-round-title {
+      font-family: var(--font-display);
+      letter-spacing: .6px;
+      font-size: 22px;
+      color: var(--accent);
+    }
+    .bracket-match {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+    }
+    .bracket-team {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 34px;
+      padding: 6px 8px;
+      border-radius: var(--radius-sm);
+      background: var(--surface2);
+      border: 1px solid transparent;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .bracket-team:hover,
+    .bracket-team.selected {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .bracket-seed {
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      margin-left: auto;
+    }
+  </style>
+</head>
+<body>
+  <header id="navbar" class="navbar container"></header>
+
+  <main class="container page">
+    <div class="bracket-toolbar">
+      <div>
+        <div class="picks-league-name">SIMULADOR</div>
+        <div class="picks-round-name">Brackets</div>
+      </div>
+      <div class="form-group" style="min-width:260px;">
+        <label class="form-label">Competencia</label>
+        <select id="league-select" class="form-select"></select>
+      </div>
+    </div>
+
+    <div id="bracket-area" class="bracket-board"></div>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="logos.js"></script>
+  <script src="app.js"></script>
+  <script>
+    if (!requireAuth()) throw new Error('redirect');
+    renderNav('brackets');
+
+    const ELIGIBLE_SLUGS = new Set([
+      'mundial-2026',
+      'uefa-champions-league',
+      'uefa-europa-league',
+      'uefa-conference-league',
+      'nba',
+      'nba-playoffs',
+      'nfl',
+      'mlb-playoffs',
+      'nhl-playoffs'
+    ]);
+
+    const TEMPLATES = {
+      'mundial-2026': ['Dieciseisavos', 'Octavos', 'Cuartos', 'Semi', 'Final'],
+      'uefa-champions-league': ['Octavos', 'Cuartos', 'Semi', 'Final'],
+      'uefa-europa-league': ['Octavos', 'Cuartos', 'Semi', 'Final'],
+      'uefa-conference-league': ['Octavos', 'Cuartos', 'Semi', 'Final'],
+      'nba': ['Primera ronda', 'Semifinal conf.', 'Final conf.', 'Final NBA'],
+      'nba-playoffs': ['Primera ronda', 'Semifinal conf.', 'Final conf.', 'Final NBA'],
+      'nfl': ['Wild Card', 'Divisional', 'Conferencia', 'Super Bowl'],
+      'mlb-playoffs': ['Wild Card', 'Divisional', 'Serie Campeonato', 'Serie Mundial'],
+      'nhl-playoffs': ['Primera ronda', 'Semifinal conf.', 'Final conf.', 'Stanley Cup']
+    };
+
+    const ROUND_MATCHES = {
+      'mundial-2026': [16, 8, 4, 2, 1],
+      'nfl': [6, 4, 2, 1],
+      default: [8, 4, 2, 1]
+    };
+
+    async function init() {
+      const select = document.getElementById('league-select');
+      const leagues = await api('/leagues');
+      const eligible = leagues.filter(l => ELIGIBLE_SLUGS.has(l.slug));
+      select.innerHTML = eligible.map(l => `<option value="${l.slug}">${l.name}</option>`).join('');
+      select.onchange = () => renderBracket(select.value);
+      renderBracket(select.value || 'mundial-2026');
+    }
+
+    function renderBracket(slug) {
+      const area = document.getElementById('bracket-area');
+      const rounds = TEMPLATES[slug] || TEMPLATES['mundial-2026'];
+      const counts = ROUND_MATCHES[slug] || ROUND_MATCHES.default;
+      area.innerHTML = rounds.map((round, idx) => `
+        <section class="bracket-round">
+          <div class="bracket-round-title">${round}</div>
+          ${Array.from({ length: counts[idx] || 1 }).map((_, i) => bracketMatch(round, i + 1, idx)).join('')}
+        </section>
+      `).join('');
+    }
+
+    function bracketMatch(round, matchNo, roundIdx) {
+      const a = roundIdx === 0 ? placeholderSeed(round, matchNo, 1) : `Ganador ${matchNo * 2 - 1}`;
+      const b = roundIdx === 0 ? placeholderSeed(round, matchNo, 2) : `Ganador ${matchNo * 2}`;
+      return `
+        <div class="bracket-match">
+          ${bracketTeam(a, matchNo)}
+          ${bracketTeam(b, matchNo)}
+        </div>
+      `;
+    }
+
+    function placeholderSeed(round, matchNo, side) {
+      if (round === 'Dieciseisavos') {
+        return side === 1 ? `Clasificado ${matchNo}A` : `Clasificado ${matchNo}B`;
+      }
+      return side === 1 ? `Equipo ${matchNo}A` : `Equipo ${matchNo}B`;
+    }
+
+    function bracketTeam(name, seed) {
+      return `
+        <button class="bracket-team" onclick="this.parentElement.querySelectorAll('.bracket-team').forEach(b => b.classList.remove('selected')); this.classList.add('selected');">
+          ${teamLogoHtml('', name, 'team-logo')}
+          <span>${displayTeamName(name)}</span>
+          <span class="bracket-seed">${seed}</span>
+        </button>
+      `;
+    }
+
+    init().catch(e => {
+      document.getElementById('bracket-area').innerHTML = `<div class="empty"><div class="empty-title">${e.message}</div></div>`;
+    });
+  </script>
+</body>
+</html>

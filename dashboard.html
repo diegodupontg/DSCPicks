@@ -324,7 +324,7 @@
             <div class="expert-pick">${pickLabel(p.pick, p.home_team, p.away_team)}</div>
             <div class="expert-match team-with-logo">
               ${teamLogoHtml(p.home_logo, p.home_team, 'team-logo')}
-              <span>${p.home_team || 'Partido'} vs ${p.away_team || 'por definir'}</span>
+              <span>${displayTeamName(p.home_team) || 'Partido'} vs ${displayTeamName(p.away_team) || 'por definir'}</span>
               ${teamLogoHtml(p.away_logo, p.away_team, 'team-logo')}
             </div>
             <div class="expert-week">${p.league_name || ''}${p.broadcast ? ' · ' + p.broadcast : ''}</div>
@@ -338,8 +338,8 @@
     }
 
     function pickLabel(pick, home, away) {
-      if (pick === '1') return `1 - ${home || 'Local'}`;
-      if (pick === '2') return `2 - ${away || 'Visita'}`;
+      if (pick === '1') return `1 - ${displayTeamName(home) || 'Local'}`;
+      if (pick === '2') return `2 - ${displayTeamName(away) || 'Visita'}`;
       return 'X - Empate';
     }
 

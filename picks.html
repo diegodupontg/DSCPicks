@@ -488,7 +488,7 @@
                 ${items.slice(0, 12).map((r, i) => `
                   <tr>
                     <td>${i + 1}</td>
-                    <td><div class="standings-team">${teamLogoHtml(r.logo, r.team, 'team-logo')}<span>${r.team}</span></div></td>
+                    <td><div class="standings-team">${teamLogoHtml(r.logo, r.team, 'team-logo')}<span>${displayTeamName(r.team)}</span></div></td>
                     <td>${r.wins || ''}</td>
                     <td>${r.losses || ''}</td>
                     <td>${r.ties || ''}</td>
@@ -513,7 +513,7 @@
               <select id="expert-fixture-select" class="form-select" ${pickedFixtures.length ? '' : 'disabled'}>
                 ${pickedFixtures.length ? pickedFixtures.map(fx => `
                   <option value="${fx.id}" data-pick="${picks[fx.id]}">
-                    ${pickLabel(picks[fx.id], fx.home_team, fx.away_team)} - ${fx.home_team} vs ${fx.away_team}
+                    ${pickLabel(picks[fx.id], fx.home_team, fx.away_team)} - ${displayTeamName(fx.home_team)} vs ${displayTeamName(fx.away_team)}
                   </option>
                 `).join('') : '<option>Guarda primero un pick en esta jornada</option>'}
               </select>
@@ -549,12 +549,12 @@
       div.innerHTML = `
         <div class="fixture-main">
           <div class="fixture-team-block fixture-team-home">
-            <div class="team-with-logo">${teamLogoHtml(fx.home_logo, fx.home_team)}<div class="fixture-team-name">${fx.home_team}</div></div>
+            <div class="team-with-logo">${teamLogoHtml(fx.home_logo, fx.home_team)}<div class="fixture-team-name">${displayTeamName(fx.home_team)}</div></div>
             <div class="text-xs text-muted">LOCAL</div>
           </div>
           <div class="fixture-mid">${scoreHtml}</div>
           <div class="fixture-team-block fixture-team-away">
-            <div class="team-with-logo">${teamLogoHtml(fx.away_logo, fx.away_team)}<div class="fixture-team-name">${fx.away_team}</div></div>
+            <div class="team-with-logo">${teamLogoHtml(fx.away_logo, fx.away_team)}<div class="fixture-team-name">${displayTeamName(fx.away_team)}</div></div>
             <div class="text-xs text-muted">VISITA</div>
           </div>
         </div>
@@ -578,15 +578,15 @@
         }
       }
 
-      const shortLabel = value === '1' ? `1 — ${shorten(fx.home_team)}`
+      const shortLabel = value === '1' ? `1 — ${shorten(displayTeamName(fx.home_team))}`
                        : value === 'X' ? 'X'
-                       : `2 — ${shorten(fx.away_team)}`;
+                       : `2 — ${shorten(displayTeamName(fx.away_team))}`;
 
       return `<button class="pick-btn ${userPick === value ? (result ? (result===value?' correct':' wrong') : `selected-${value}`) : ''}"
         ${locked ? 'disabled' : ''}
         onclick="setPick(${fx.id}, '${value}', this)">
         <div style="font-size:15px;">${value}</div>
-        <div style="font-size:10px;opacity:.7;margin-top:2px;">${shorten(label)}</div>
+        <div style="font-size:10px;opacity:.7;margin-top:2px;">${shorten(displayTeamName(label))}</div>
       </button>`;
     }
 
@@ -623,15 +623,15 @@
       select.innerHTML = pickedFixtures.length
         ? pickedFixtures.map(fx => `
             <option value="${fx.id}" data-pick="${picks[fx.id]}">
-              ${pickLabel(picks[fx.id], fx.home_team, fx.away_team)} - ${fx.home_team} vs ${fx.away_team}
+              ${pickLabel(picks[fx.id], fx.home_team, fx.away_team)} - ${displayTeamName(fx.home_team)} vs ${displayTeamName(fx.away_team)}
             </option>
           `).join('')
         : '<option>Guarda primero un pick en esta jornada</option>';
     }
 
     function pickLabel(pick, home, away) {
-      if (pick === '1') return `1 - ${home || 'Local'}`;
-      if (pick === '2') return `2 - ${away || 'Visita'}`;
+      if (pick === '1') return `1 - ${displayTeamName(home) || 'Local'}`;
+      if (pick === '2') return `2 - ${displayTeamName(away) || 'Visita'}`;
       return 'X - Empate';
     }
 

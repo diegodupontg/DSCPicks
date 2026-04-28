@@ -23,6 +23,18 @@ function clearAuth() {
   localStorage.removeItem('dp_user');
 }
 
+function applyTheme(theme = localStorage.getItem('dp_theme') || 'dark') {
+  document.documentElement.dataset.theme = theme === 'light' ? 'light' : 'dark';
+}
+
+function toggleTheme() {
+  const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+  localStorage.setItem('dp_theme', next);
+  applyTheme(next);
+}
+
+applyTheme();
+
 function avatarHtml(user, className = 'navbar-avatar') {
   const label = ((user?.display_name || user?.username || '?')[0] || '?').toUpperCase();
   if (user?.avatar_url) {
@@ -103,6 +115,7 @@ function renderNav(activePage = '') {
       </ul>
     </nav>
     <div class="navbar-user">
+      <button class="btn btn-ghost btn-sm theme-toggle" onclick="toggleTheme()" title="Cambiar tema">◐</button>
       ${avatarHtml(user)}
       <span class="navbar-username">${user.display_name || user.username}</span>
       <button class="btn btn-ghost btn-sm" onclick="logout()">Salir</button>
@@ -116,8 +129,94 @@ function leagueLogoHtml(league, cls = 'league-logo-img') {
 }
 
 function teamLogoHtml(url, name, cls = 'team-logo') {
-  if (!url) return `<span class="${cls} fallback">${(name || '?').slice(0, 1).toUpperCase()}</span>`;
+  if (!url) {
+    const flag = countryFlag(name);
+    return `<span class="${cls} fallback">${flag || (displayTeamName(name) || '?').slice(0, 1).toUpperCase()}</span>`;
+  }
   return `<img class="${cls}" src="${url}" alt="${name || 'Equipo'}">`;
+}
+
+const COUNTRY_ES = {
+  'Argentina': 'Argentina',
+  'Algeria': 'Argelia',
+  'Australia': 'Australia',
+  'Austria': 'Austria',
+  'Belgium': 'Belgica',
+  'Bosnia-Herzegovina': 'Bosnia y Herzegovina',
+  'Brazil': 'Brasil',
+  'Canada': 'Canada',
+  'Cape Verde': 'Cabo Verde',
+  'Colombia': 'Colombia',
+  'Congo DR': 'RD Congo',
+  'Croatia': 'Croacia',
+  'Curacao': 'Curazao',
+  'Czechia': 'Chequia',
+  'Czech Republic': 'Republica Checa',
+  'DR Congo': 'RD Congo',
+  'Ecuador': 'Ecuador',
+  'Egypt': 'Egipto',
+  'England': 'Inglaterra',
+  'France': 'Francia',
+  'Germany': 'Alemania',
+  'Ghana': 'Ghana',
+  'Haiti': 'Haiti',
+  'Iran': 'Iran',
+  'IR Iran': 'Iran',
+  'Iraq': 'Irak',
+  'Ivory Coast': 'Costa de Marfil',
+  'Japan': 'Japon',
+  'Jordan': 'Jordania',
+  'Mexico': 'Mexico',
+  'Morocco': 'Marruecos',
+  'Netherlands': 'Paises Bajos',
+  'New Zealand': 'Nueva Zelanda',
+  'Norway': 'Noruega',
+  'Panama': 'Panama',
+  'Paraguay': 'Paraguay',
+  'Portugal': 'Portugal',
+  'Qatar': 'Qatar',
+  'Saudi Arabia': 'Arabia Saudita',
+  'Scotland': 'Escocia',
+  'Senegal': 'Senegal',
+  'South Africa': 'Sudafrica',
+  'South Korea': 'Corea del Sur',
+  'Korea Republic': 'Corea del Sur',
+  'Spain': 'Espana',
+  'Sweden': 'Suecia',
+  'Switzerland': 'Suiza',
+  'Tunisia': 'Tunez',
+  'Turkiye': 'Turquia',
+  'Türkiye': 'Turquia',
+  'United States': 'Estados Unidos',
+  'USA': 'Estados Unidos',
+  'Uruguay': 'Uruguay',
+  'Uzbekistan': 'Uzbekistan'
+};
+
+const COUNTRY_FLAGS = {
+  'Argentina': '🇦🇷', 'Algeria': '🇩🇿', 'Australia': '🇦🇺', 'Austria': '🇦🇹',
+  'Belgium': '🇧🇪', 'Bosnia-Herzegovina': '🇧🇦', 'Brazil': '🇧🇷', 'Canada': '🇨🇦',
+  'Cape Verde': '🇨🇻', 'Colombia': '🇨🇴', 'Congo DR': '🇨🇩', 'Croatia': '🇭🇷',
+  'Curacao': '🇨🇼', 'Czechia': '🇨🇿', 'Czech Republic': '🇨🇿', 'DR Congo': '🇨🇩',
+  'Ecuador': '🇪🇨', 'Egypt': '🇪🇬', 'England': '🏴', 'France': '🇫🇷',
+  'Germany': '🇩🇪', 'Ghana': '🇬🇭', 'Haiti': '🇭🇹', 'Iran': '🇮🇷',
+  'IR Iran': '🇮🇷', 'Iraq': '🇮🇶', 'Ivory Coast': '🇨🇮', 'Japan': '🇯🇵',
+  'Jordan': '🇯🇴', 'Mexico': '🇲🇽', 'Morocco': '🇲🇦', 'Netherlands': '🇳🇱',
+  'New Zealand': '🇳🇿', 'Norway': '🇳🇴', 'Panama': '🇵🇦', 'Paraguay': '🇵🇾',
+  'Portugal': '🇵🇹', 'Qatar': '🇶🇦', 'Saudi Arabia': '🇸🇦', 'Scotland': '🏴',
+  'Senegal': '🇸🇳', 'South Africa': '🇿🇦', 'South Korea': '🇰🇷', 'Korea Republic': '🇰🇷',
+  'Spain': '🇪🇸', 'Sweden': '🇸🇪', 'Switzerland': '🇨🇭', 'Tunisia': '🇹🇳',
+  'Turkiye': '🇹🇷', 'Türkiye': '🇹🇷', 'United States': '🇺🇸', 'USA': '🇺🇸',
+  'Uruguay': '🇺🇾', 'Uzbekistan': '🇺🇿'
+};
+
+function displayTeamName(name) {
+  const key = String(name || '').trim();
+  return COUNTRY_ES[key] || key;
+}
+
+function countryFlag(name) {
+  return COUNTRY_FLAGS[String(name || '').trim()] || '';
 }
 
 function isExpertAccount(user = getUser()) {

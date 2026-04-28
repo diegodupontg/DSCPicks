@@ -46,6 +46,29 @@
   --nav-h:       60px;
 }
 
+:root[data-theme="light"] {
+  --bg:          #F4F7FB;
+  --surface:     #FFFFFF;
+  --surface2:    #EEF3FA;
+  --surface3:    #E3EAF5;
+  --border:      #D7E0ED;
+  --border2:     #C4D0E1;
+
+  --accent:      #4E7E00;
+  --accent-dim:  rgba(78, 126, 0, 0.12);
+  --accent-dark: rgba(78, 126, 0, 0.07);
+
+  --blue:        #1557D8;
+  --blue-dim:    rgba(21,87,216,0.12);
+
+  --text:        #121826;
+  --text-muted:  #64748B;
+  --text-dim:    #334155;
+
+  --shadow:      0 4px 24px rgba(15,23,42,0.08);
+  --shadow-lg:   0 8px 48px rgba(15,23,42,0.14);
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html { font-size: 16px; scroll-behavior: smooth; }
@@ -77,6 +100,10 @@ body {
   gap: 0;
 }
 
+:root[data-theme="light"] .navbar {
+  background: rgba(244,247,251,0.92);
+}
+
 .navbar-logo {
   font-family: var(--font-display);
   color: var(--text);
@@ -99,6 +126,12 @@ body {
 .brand-logo-nav img {
   width: 178px;
   height: auto;
+}
+
+.theme-toggle {
+  min-width: 34px;
+  padding-inline: 0;
+  font-size: 18px;
 }
 
 .brand-logo-auth img {
