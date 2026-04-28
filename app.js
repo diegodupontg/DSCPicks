@@ -125,7 +125,36 @@ function renderNav(activePage = '') {
 
 function leagueLogoHtml(league, cls = 'league-logo-img') {
   if (league?.logo_url) return `<img class="${cls}" src="${league.logo_url}" alt="${league.name || 'Liga'}">`;
-  return `<span class="${cls} fallback">${league?.logo_emoji || 'T'}</span>`;
+  return `<span class="${cls} fallback">${leagueFallbackBadge(league)}</span>`;
+}
+
+function leagueFallbackBadge(league = {}) {
+  const bySlug = {
+    'mundial-2026': '🌎',
+    'nba': '🏀',
+    'nba-cup': '🏀',
+    'nba-playoffs': '🏀',
+    'laliga': '🇪🇸',
+    'premier-league': '🏴',
+    'serie-a': '🇮🇹',
+    'mls': '🇺🇸',
+    'liga-1-peru': '🇵🇪',
+    'liga-rusa': '🇷🇺',
+    'nfl': '🏈',
+    'mlb-playoffs': '⚾',
+    'nhl-playoffs': '🏒',
+    'uefa-champions-league': '⭐',
+    'uefa-europa-league': '🏆',
+    'uefa-conference-league': '🏆',
+    'uefa-womens-champions': '⭐',
+    'eliminatorias-conmebol': '🌎',
+    'eliminatorias-uefa': '🇪🇺',
+    'eliminatorias-concacaf': '🌎',
+    'eliminatorias-afc': '🌏',
+    'eliminatorias-caf': '🌍',
+    'amistosos-internacionales': '🌐'
+  };
+  return bySlug[league.slug] || league.logo_emoji || '🏆';
 }
 
 function teamLogoHtml(url, name, cls = 'team-logo') {
