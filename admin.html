@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dupo Polla - Admin</title>
-  <link rel="stylesheet" href="style.css?v=20260429-0100">
+  <link rel="stylesheet" href="style.css?v=20260429-0200">
   <style>
     .admin-grid {
       display: grid;
@@ -121,7 +121,7 @@
 
   <script src="config.js"></script>
   <script src="logos.js"></script>
-  <script src="app.js?v=20260429-0100"></script>
+  <script src="app.js?v=20260429-0200"></script>
   <script>
     if (!requireAdmin()) throw new Error('redirect');
     renderNav('admin');
@@ -218,7 +218,7 @@
         }
         select.innerHTML = picks.map(p => `
           <option value="${p.fixture_id}" data-pick="${p.pick}" data-round="${p.round_name}">
-            ${p.round_name} Â· ${pickLabelAdmin(p.pick, p.home_team, p.away_team)} Â· ${displayTeamName(p.home_team)} vs ${displayTeamName(p.away_team)}
+            ${p.round_name} - ${pickLabelAdmin(p.pick, p.home_team, p.away_team)} - ${displayTeamName(p.home_team)} vs ${displayTeamName(p.away_team)}
           </option>
         `).join('');
         applyExpertPickSelection();

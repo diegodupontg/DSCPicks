@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dupo Polla â€” Ingresar</title>
-  <link rel="stylesheet" href="style.css?v=20260429-0100">
+  <title>Dupo Polla - Ingresar</title>
+  <link rel="stylesheet" href="style.css?v=20260429-0200">
   <style>
     body { display: flex; align-items: stretch; min-height: 100vh; }
 
@@ -15,7 +15,7 @@
       min-height: 100vh;
     }
 
-    /* â”€â”€ LEFT: branding â”€â”€ */
+    /* LEFT: branding */
     .auth-left {
       background: var(--surface);
       border-right: 1px solid var(--border);
@@ -81,7 +81,7 @@
       color: var(--text-muted);
     }
 
-    /* â”€â”€ RIGHT: form â”€â”€ */
+    /* RIGHT: form */
     .auth-right {
       display: flex;
       flex-direction: column;
@@ -170,14 +170,14 @@
       </h1>
       <p class="auth-sub">
         Predice resultados, compite con tus amigos y lleva la tabla en tiempo real.
-        FÃºtbol, basketball y brackets â€” todo en un solo lugar.
+        Futbol, basketball y brackets - todo en un solo lugar.
       </p>
       <div class="auth-pills">
-        <span class="auth-pill">âš½ Champions League</span>
-        <span class="auth-pill">âš½ Eliminatorias</span>
-        <span class="auth-pill">ðŸ€ EuroLeague</span>
-        <span class="auth-pill">ðŸ€ ACB</span>
-        <span class="auth-pill">ðŸ† Brackets</span>
+        <span class="auth-pill">Champions League</span>
+        <span class="auth-pill">Eliminatorias</span>
+        <span class="auth-pill">NBA</span>
+        <span class="auth-pill">LaLiga</span>
+        <span class="auth-pill">Brackets</span>
       </div>
     </div>
 
@@ -199,8 +199,8 @@
           <input type="text" id="login-user" class="form-input" placeholder="Tu nombre de usuario" autocomplete="username">
         </div>
         <div class="form-group">
-          <label class="form-label">ContraseÃ±a</label>
-          <input type="password" id="login-pass" class="form-input" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" autocomplete="current-password">
+          <label class="form-label">Contrasena</label>
+          <input type="password" id="login-pass" class="form-input" placeholder="********" autocomplete="current-password">
         </div>
         <button class="btn btn-accent btn-full btn-lg" id="btn-login" onclick="doLogin()">
           Ingresar
@@ -228,13 +228,13 @@
           <div class="text-xs text-muted">PNG, JPG, WebP o GIF. Maximo 250 KB.</div>
         </div>
         <div class="form-group">
-          <label class="form-label">ContraseÃ±a</label>
+          <label class="form-label">Contrasena</label>
           <input type="password" id="reg-pass" class="form-input" placeholder="Minimo 8 caracteres con letras y numeros" autocomplete="new-password" oninput="updatePasswordHint()">
           <div class="text-xs text-muted" id="password-hint">Usa al menos 8 caracteres, con una letra y un numero.</div>
         </div>
         <div class="form-group">
-          <label class="form-label">Confirmar ContraseÃ±a</label>
-          <input type="password" id="reg-pass2" class="form-input" placeholder="Repite tu contraseÃ±a" autocomplete="new-password">
+          <label class="form-label">Confirmar contrasena</label>
+          <input type="password" id="reg-pass2" class="form-input" placeholder="Repite tu contrasena" autocomplete="new-password">
         </div>
         <div class="form-group">
           <label class="form-label">Pregunta de seguridad</label>
@@ -289,14 +289,14 @@
       </div>
 
       <p class="auth-footer">
-        Dupo Polla Â· Dupo Corp &copy; 2025
+        Dupo Polla - Dupo Corp &copy; 2025
       </p>
     </div>
   </div>
 
   <script src="config.js"></script>
   <script src="logos.js"></script>
-  <script src="app.js?v=20260429-0100"></script>
+  <script src="app.js?v=20260429-0200"></script>
   <script>
     document.getElementById('auth-brand-logo').innerHTML = brandLogoHtml('auth');
 
@@ -339,7 +339,7 @@
           method: 'POST', body: { username, password }
         });
         setAuth(token, user);
-        toast('Â¡Bienvenido, ' + user.username + '!', 'success');
+        toast('Bienvenido, ' + user.username + '!', 'success');
         setTimeout(() => window.location.href = 'dashboard.html', 500);
       } catch(e) {
         toast(e.message, 'error');
@@ -360,9 +360,9 @@
       if (!username || !password) { toast('Completa todos los campos', 'error'); return; }
       if (!/^[a-zA-Z0-9_]{3,24}$/.test(username)) { toast('Usuario: 3-24 caracteres, solo letras, numeros y _', 'error'); return; }
       if (password.length < 8 || !/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
-        toast('La contraseÃ±a debe tener 8 caracteres, letras y numeros', 'error'); return;
+        toast('La contrasena debe tener 8 caracteres, letras y numeros', 'error'); return;
       }
-      if (password !== pass2) { toast('Las contraseÃ±as no coinciden', 'error'); return; }
+      if (password !== pass2) { toast('Las contrasenas no coinciden', 'error'); return; }
       if (avatarFile && avatarFile.size > 250 * 1024) { toast('La imagen supera 250 KB', 'error'); return; }
 
       const btn = document.getElementById('btn-register');
@@ -375,7 +375,7 @@
           method: 'POST', body: { username, display_name, avatar_url, password, security_question, security_answer }
         });
         setAuth(token, user);
-        toast('Â¡Cuenta creada! Bienvenido, ' + user.username, 'success');
+        toast('Cuenta creada. Bienvenido, ' + user.username, 'success');
         setTimeout(() => window.location.href = 'dashboard.html', 500);
       } catch(e) {
         toast(e.message, 'error');
@@ -433,7 +433,7 @@
       const pass = document.getElementById('reg-pass').value;
       const ok = pass.length >= 8 && /[A-Za-z]/.test(pass) && /[0-9]/.test(pass);
       const hint = document.getElementById('password-hint');
-      hint.textContent = ok ? 'ContraseÃ±a lista.' : 'Usa al menos 8 caracteres, con una letra y un numero.';
+      hint.textContent = ok ? 'Contrasena lista.' : 'Usa al menos 8 caracteres, con una letra y un numero.';
       hint.className = ok ? 'text-xs text-success' : 'text-xs text-muted';
     }
 

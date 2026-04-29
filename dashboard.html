@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dupo Polla â€” Dashboard</title>
-  <link rel="stylesheet" href="style.css?v=20260429-0100">
+  <title>Dupo Polla - Dashboard</title>
+  <link rel="stylesheet" href="style.css?v=20260429-0200">
   <style>
     .hero {
       padding: 36px 0 24px;
@@ -177,15 +177,15 @@
           <div class="section-title" style="font-size:16px;">MIS STATS</div>
           <div class="my-stats" id="my-stats">
             <div class="stat-box">
-              <span class="stat-value" id="stat-pts">â€”</span>
+              <span class="stat-value" id="stat-pts">-</span>
               <span class="stat-label">Puntos</span>
             </div>
             <div class="stat-box">
-              <span class="stat-value" id="stat-correct">â€”</span>
+              <span class="stat-value" id="stat-correct">-</span>
               <span class="stat-label">Correctos</span>
             </div>
             <div class="stat-box">
-              <span class="stat-value" id="stat-played">â€”</span>
+              <span class="stat-value" id="stat-played">-</span>
               <span class="stat-label">Jugados</span>
             </div>
           </div>
@@ -204,7 +204,7 @@
 
   <script src="config.js"></script>
   <script src="logos.js"></script>
-  <script src="app.js?v=20260429-0100"></script>
+  <script src="app.js?v=20260429-0200"></script>
   <script>
     if (!requireAuth()) throw new Error('redirect');
 
@@ -232,7 +232,6 @@
         const leagues = await api('/leagues');
         if (leagues.length === 0) {
           container.innerHTML = `<div class="empty">
-            <div class="empty-icon">ðŸŸï¸</div>
             <div class="empty-title">Sin ligas activas</div>
             <div class="empty-desc">Un administrador debe crear ligas primero.</div>
           </div>`;
@@ -244,7 +243,7 @@
           await renderLeagueSection(lg, container);
         }
       } catch(e) {
-        container.innerHTML = `<div class="empty"><div class="empty-icon">âš ï¸</div><div class="empty-title">${e.message}</div></div>`;
+        container.innerHTML = `<div class="empty"><div class="empty-title">${e.message}</div></div>`;
       }
     }
 
@@ -263,7 +262,7 @@
       section.innerHTML = `
         <div class="league-header">
           ${leagueLogoHtml(league)}
-          <span class="league-header-emoji">${league.logo_emoji || 'ðŸ†'}</span>
+          <span class="league-header-emoji">${league.logo_emoji || ''}</span>
           <div class="league-header-info">
             <div class="league-header-name">${league.name}</div>
             <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
@@ -272,7 +271,7 @@
             </div>
           </div>
           <a href="${picksLink}" class="btn btn-accent btn-sm go-picks-btn">
-            ${isRacket ? 'ðŸ† Ver Bracket' : 'âœï¸ Mis Picks'}
+            ${isRacket ? 'Ver Bracket' : 'Mis Picks'}
           </a>
         </div>
 
@@ -281,12 +280,12 @@
             ${rounds.slice(0, 6).map(r => `
               <a href="picks.html?round_id=${r.id}&league_id=${league.id}" class="round-pill">
                 ${r.name}
-                ${r.deadline ? `<span class="text-xs">${isDeadlinePassed(r.deadline) ? 'ðŸ”’' : 'ðŸ•'}</span>` : ''}
+                ${r.deadline ? `<span class="text-xs">${isDeadlinePassed(r.deadline) ? 'Cerrado' : 'Abierto'}</span>` : ''}
               </a>
             `).join('')}
-            ${rounds.length > 6 ? `<span class="text-muted text-sm">+${rounds.length-6} mÃ¡s</span>` : ''}
+            ${rounds.length > 6 ? `<span class="text-muted text-sm">+${rounds.length-6} mas</span>` : ''}
           </div>
-        ` : `<p class="text-sm text-muted" style="margin-bottom:16px;">Sin fechas disponibles aÃºn.</p>`}
+        ` : `<p class="text-sm text-muted" style="margin-bottom:16px;">Sin fechas disponibles aun.</p>`}
 
         <div class="sep"></div>
       `;
@@ -298,7 +297,7 @@
       try {
         const lb = await api('/leaderboard');
         if (lb.length === 0) {
-          el.innerHTML = '<div class="empty-desc text-muted text-sm" style="padding:16px 0">AÃºn nadie en tabla.</div>';
+          el.innerHTML = '<div class="empty-desc text-muted text-sm" style="padding:16px 0">Aun nadie en tabla.</div>';
           return;
         }
         el.innerHTML = lb.slice(0, 10).map((row, i) => `

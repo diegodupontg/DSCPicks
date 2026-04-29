@@ -99,7 +99,7 @@ function renderNav(activePage = '') {
   if (!nav) return;
 
   const adminLink = isAdmin()
-    ? `<li><a href="admin.html" class="${activePage==='admin'?'active':''}">⚙ Admin</a></li>`
+    ? `<li><a href="admin.html" class="${activePage==='admin'?'active':''}">Admin</a></li>`
     : '';
 
   nav.innerHTML = `
@@ -357,7 +357,7 @@ function toast(message, type = 'info', duration = 3500) {
 
 // ── Date Helpers ─────────────────────────────────────
 function formatDate(dateStr) {
-  if (!dateStr) return '—';
+  if (!dateStr) return '-';
   const d = new Date(dateStr);
   return d.toLocaleDateString('es-PE', {
     day: '2-digit', month: 'short', year: 'numeric',
@@ -366,7 +366,7 @@ function formatDate(dateStr) {
 }
 
 function formatDateShort(dateStr) {
-  if (!dateStr) return '—';
+  if (!dateStr) return '-';
   const d = new Date(dateStr);
   return d.toLocaleDateString('es-PE', {
     day: '2-digit', month: 'short',

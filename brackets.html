@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DSC Picks - Brackets</title>
-  <link rel="stylesheet" href="style.css?v=20260429-0100">
+  <link rel="stylesheet" href="style.css?v=20260429-0200">
   <style>
     .bracket-toolbar {
       display: flex;
@@ -16,11 +16,9 @@
     }
     .bracket-board {
       display: grid;
-      grid-auto-flow: column;
-      grid-auto-columns: minmax(230px, 1fr);
-      gap: 18px;
-      overflow-x: auto;
-      padding-bottom: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 20px;
+      overflow: visible;
     }
     .worldcup-groups {
       display: grid;
@@ -71,37 +69,11 @@
       background: var(--surface2);
       border: 1px solid var(--border);
     }
-    .bracket-stage {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(220px, .8fr) minmax(0, 1fr);
-      gap: 18px;
-      align-items: center;
-      overflow-x: auto;
-      padding-bottom: 16px;
-    }
-    .bracket-side {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(210px, 1fr));
-      gap: 18px;
-      align-items: start;
-    }
-    .bracket-side.three {
-      grid-template-columns: repeat(3, minmax(210px, 1fr));
-    }
-    .bracket-center {
-      display: grid;
-      gap: 18px;
-      align-content: center;
-      min-width: 220px;
-    }
-    .bracket-board.compact {
-      grid-auto-columns: minmax(210px, 1fr);
-    }
     .bracket-round {
       display: grid;
       gap: 14px;
       align-content: start;
-      min-width: 220px;
+      min-width: 0;
     }
     .bracket-round-title {
       font-family: var(--font-display);
@@ -140,6 +112,20 @@
       font-size: 11px;
       margin-left: auto;
     }
+    .conference-title {
+      margin: 6px 0 -4px;
+      color: var(--blue);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      font-weight: 800;
+      text-align: center;
+    }
+    @media (max-width: 720px) {
+      .bracket-board { grid-template-columns: 1fr; }
+      .bracket-toolbar { align-items: stretch; }
+      .bracket-toolbar .form-group { min-width: 0 !important; width: 100%; }
+    }
   </style>
 </head>
 <body>
@@ -163,7 +149,7 @@
 
   <script src="config.js"></script>
   <script src="logos.js"></script>
-  <script src="app.js?v=20260429-0100"></script>
+  <script src="app.js?v=20260429-0200"></script>
   <script>
     if (!requireAuth()) throw new Error('redirect');
     renderNav('brackets');
@@ -268,7 +254,7 @@
           <div class="group-title">Grupo ${group}</div>
           ${[1,2,3,4].map(pos => `
             <div class="group-row">
-              <span class="bracket-seed">${pos}Âº</span>
+              <span class="bracket-seed">${pos}</span>
               <select class="form-select" onchange="setGroupPick('${group}', ${pos}, this.value)">
                 ${teams.map(t => `<option value="${t}" ${saved[`g-${group}-${pos}`] === t ? 'selected' : ''}>${displayTeamName(t)}</option>`).join('')}
               </select>
@@ -309,7 +295,7 @@
               const rank = i + 1;
               const selectedGroup = s[`best-third-rank-${rank}`];
               return `<label class="third-check">
-                <span class="bracket-seed">Mejor 3Âº ${rank}</span>
+                <span class="bracket-seed">3ro ${rank}</span>
                 <select class="form-select" onchange="setThirdRank(${rank}, this.value)">
                   ${groups.map(g => {
                     const team = s[`g-${g}-3`];
@@ -340,11 +326,11 @@
       ensureThirdRanking();
       const third = rank => {
         const group = s[`best-third-rank-${rank}`];
-        return { name: s[`g-${group}-3`] || `Mejor 3Âº ${rank}`, logo: '', seed: `3${group}` };
+        return { name: s[`g-${group}-3`] || `Mejor tercero ${rank}`, logo: '', seed: `3${group}` };
       };
       const thirds = Array.from({ length: 8 }).map((_, i) => {
         const group = s[`best-third-rank-${i + 1}`];
-        return { name: s[`g-${group}-3`] || `Mejor 3Âº ${i + 1}`, logo: '', seed: `3${group}` };
+        return { name: s[`g-${group}-3`] || `Mejor tercero ${i + 1}`, logo: '', seed: `3${group}` };
       });
       return [
         [team('A', 1, '1A'), third(1)],
@@ -368,8 +354,11 @@
 
     async function firstRoundForLeague(slug) {
       if (slug === 'nba-playoffs' || slug === 'nba') {
+        const fixtures = await firstRoundFromFixtures(slug);
+        if (fixtures?.length) return fixtures;
         const standings = await nbaFirstRoundFromStandings(slug);
         if (standings?.length) return standings;
+        return [];
       }
       return firstRoundFromFixtures(slug);
     }
@@ -448,19 +437,22 @@
         ]);
       }
 
-      if (currentSlug === 'nba-playoffs' || currentSlug === 'mundial-2026') {
-        renderPlayoffLayout(rounds, generated);
-        return;
-      }
-
       const area = document.getElementById('bracket-area');
       area.className = 'bracket-board';
       area.innerHTML = rounds.map((round, idx) => `
         <section class="bracket-round">
           <div class="bracket-round-title">${round}</div>
-          ${generated[idx].map((match, i) => bracketMatch(match, idx, i)).join('')}
+          ${generated[idx].map((match, i) => bracketMatchWithConference(match, idx, i)).join('')}
         </section>
       `).join('');
+    }
+
+    function bracketMatchWithConference(match, roundIdx, matchIdx) {
+      if (!((currentSlug === 'nba-playoffs' || currentSlug === 'nba') && roundIdx === 0)) {
+        return bracketMatch(match, roundIdx, matchIdx);
+      }
+      const label = matchIdx === 0 ? 'Conferencia Oeste' : matchIdx === 4 ? 'Conferencia Este' : '';
+      return `${label ? `<div class="conference-title">${label}</div>` : ''}${bracketMatch(match, roundIdx, matchIdx)}`;
     }
 
     function renderPlayoffLayout(rounds, generated) {
@@ -493,7 +485,7 @@
 
       area.innerHTML = `
         <div class="bracket-side">
-          ${playoffColumn('Oeste - 1Âº Ronda', west, 0, 0)}
+          ${playoffColumn('Oeste - Primera ronda', west, 0, 0)}
           ${playoffColumn('Oeste - Semis', generated[1]?.slice(0, Math.ceil((generated[1] || []).length / 2)) || [], 1, 0)}
         </div>
         <div class="bracket-center">
@@ -502,7 +494,7 @@
         </div>
         <div class="bracket-side">
           ${playoffColumn('Este - Semis', generated[1]?.slice(Math.ceil((generated[1] || []).length / 2)) || [], 1, Math.ceil((generated[1] || []).length / 2))}
-          ${playoffColumn('Este - 1Âº Ronda', east, 0, west.length)}
+          ${playoffColumn('Este - Primera ronda', east, 0, west.length)}
         </div>
       `;
     }
