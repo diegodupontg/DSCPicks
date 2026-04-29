@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dupo Polla — Dashboard</title>
-  <link rel="stylesheet" href="style.css?v=20260428-1240">
+  <title>Dupo Polla â€” Dashboard</title>
+  <link rel="stylesheet" href="style.css?v=20260429-0100">
   <style>
     .hero {
       padding: 36px 0 24px;
@@ -150,20 +150,42 @@
           <button class="btn btn-outline btn-full mt-12" id="btn-profile" onclick="saveProfile()">Guardar perfil</button>
         </div>
 
+        <div class="card">
+          <div class="section-title" style="font-size:16px;">SEGURIDAD</div>
+          <div class="form-group">
+            <label class="form-label">Pregunta de seguridad</label>
+            <select id="security-question" class="form-select">
+              <option value="Cual fue tu primer equipo favorito?">Cual fue tu primer equipo favorito?</option>
+              <option value="En que ciudad naciste?">En que ciudad naciste?</option>
+              <option value="Cual fue el nombre de tu primera mascota?">Cual fue el nombre de tu primera mascota?</option>
+              <option value="Cual es tu apodo de infancia?">Cual es tu apodo de infancia?</option>
+            </select>
+          </div>
+          <div class="form-group mt-12">
+            <label class="form-label">Nueva respuesta</label>
+            <input id="security-answer" type="password" class="form-input" placeholder="Respuesta privada">
+          </div>
+          <div class="form-group mt-12">
+            <label class="form-label">Contrasena actual</label>
+            <input id="security-current-password" type="password" class="form-input" autocomplete="current-password">
+          </div>
+          <button class="btn btn-outline btn-full mt-12" id="btn-security" onclick="saveSecurityQuestion()">Guardar seguridad</button>
+        </div>
+
         <!-- Mis stats -->
         <div class="card">
           <div class="section-title" style="font-size:16px;">MIS STATS</div>
           <div class="my-stats" id="my-stats">
             <div class="stat-box">
-              <span class="stat-value" id="stat-pts">—</span>
+              <span class="stat-value" id="stat-pts">â€”</span>
               <span class="stat-label">Puntos</span>
             </div>
             <div class="stat-box">
-              <span class="stat-value" id="stat-correct">—</span>
+              <span class="stat-value" id="stat-correct">â€”</span>
               <span class="stat-label">Correctos</span>
             </div>
             <div class="stat-box">
-              <span class="stat-value" id="stat-played">—</span>
+              <span class="stat-value" id="stat-played">â€”</span>
               <span class="stat-label">Jugados</span>
             </div>
           </div>
@@ -182,7 +204,7 @@
 
   <script src="config.js"></script>
   <script src="logos.js"></script>
-  <script src="app.js?v=20260428-1240"></script>
+  <script src="app.js?v=20260429-0100"></script>
   <script>
     if (!requireAuth()) throw new Error('redirect');
 
@@ -202,6 +224,7 @@
     loadLeaderboard();
     loadMyStats();
     loadProfile();
+    loadSecurityQuestion();
 
     async function loadLeagues() {
       const container = document.getElementById('leagues-container');
@@ -209,7 +232,7 @@
         const leagues = await api('/leagues');
         if (leagues.length === 0) {
           container.innerHTML = `<div class="empty">
-            <div class="empty-icon">🏟️</div>
+            <div class="empty-icon">ðŸŸï¸</div>
             <div class="empty-title">Sin ligas activas</div>
             <div class="empty-desc">Un administrador debe crear ligas primero.</div>
           </div>`;
@@ -221,7 +244,7 @@
           await renderLeagueSection(lg, container);
         }
       } catch(e) {
-        container.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-title">${e.message}</div></div>`;
+        container.innerHTML = `<div class="empty"><div class="empty-icon">âš ï¸</div><div class="empty-title">${e.message}</div></div>`;
       }
     }
 
@@ -240,7 +263,7 @@
       section.innerHTML = `
         <div class="league-header">
           ${leagueLogoHtml(league)}
-          <span class="league-header-emoji">${league.logo_emoji || '🏆'}</span>
+          <span class="league-header-emoji">${league.logo_emoji || 'ðŸ†'}</span>
           <div class="league-header-info">
             <div class="league-header-name">${league.name}</div>
             <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
@@ -249,7 +272,7 @@
             </div>
           </div>
           <a href="${picksLink}" class="btn btn-accent btn-sm go-picks-btn">
-            ${isRacket ? '🏆 Ver Bracket' : '✏️ Mis Picks'}
+            ${isRacket ? 'ðŸ† Ver Bracket' : 'âœï¸ Mis Picks'}
           </a>
         </div>
 
@@ -258,12 +281,12 @@
             ${rounds.slice(0, 6).map(r => `
               <a href="picks.html?round_id=${r.id}&league_id=${league.id}" class="round-pill">
                 ${r.name}
-                ${r.deadline ? `<span class="text-xs">${isDeadlinePassed(r.deadline) ? '🔒' : '🕐'}</span>` : ''}
+                ${r.deadline ? `<span class="text-xs">${isDeadlinePassed(r.deadline) ? 'ðŸ”’' : 'ðŸ•'}</span>` : ''}
               </a>
             `).join('')}
-            ${rounds.length > 6 ? `<span class="text-muted text-sm">+${rounds.length-6} más</span>` : ''}
+            ${rounds.length > 6 ? `<span class="text-muted text-sm">+${rounds.length-6} mÃ¡s</span>` : ''}
           </div>
-        ` : `<p class="text-sm text-muted" style="margin-bottom:16px;">Sin fechas disponibles aún.</p>`}
+        ` : `<p class="text-sm text-muted" style="margin-bottom:16px;">Sin fechas disponibles aÃºn.</p>`}
 
         <div class="sep"></div>
       `;
@@ -275,7 +298,7 @@
       try {
         const lb = await api('/leaderboard');
         if (lb.length === 0) {
-          el.innerHTML = '<div class="empty-desc text-muted text-sm" style="padding:16px 0">Aún nadie en tabla.</div>';
+          el.innerHTML = '<div class="empty-desc text-muted text-sm" style="padding:16px 0">AÃºn nadie en tabla.</div>';
           return;
         }
         el.innerHTML = lb.slice(0, 10).map((row, i) => `
@@ -376,6 +399,43 @@
       } finally {
         btn.disabled = false;
         btn.textContent = 'Guardar perfil';
+      }
+    }
+
+    async function loadSecurityQuestion() {
+      try {
+        const data = await api('/security-question');
+        const select = document.getElementById('security-question');
+        if (data.question && Array.from(select.options).some(o => o.value === data.question)) {
+          select.value = data.question;
+        }
+      } catch {}
+    }
+
+    async function saveSecurityQuestion() {
+      const security_question = document.getElementById('security-question').value;
+      const security_answer = document.getElementById('security-answer').value;
+      const current_password = document.getElementById('security-current-password').value;
+      if (!security_question || !security_answer || !current_password) {
+        toast('Completa pregunta, respuesta y contrasena actual', 'error');
+        return;
+      }
+      const btn = document.getElementById('btn-security');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Guardando...';
+      try {
+        await api('/security-question', {
+          method: 'PUT',
+          body: { security_question, security_answer, current_password }
+        });
+        document.getElementById('security-answer').value = '';
+        document.getElementById('security-current-password').value = '';
+        toast('Pregunta de seguridad actualizada', 'success');
+      } catch(e) {
+        toast(e.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Guardar seguridad';
       }
     }
 

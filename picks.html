@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dupo Polla — Picks</title>
-  <link rel="stylesheet" href="style.css?v=20260428-1240">
+  <title>Dupo Polla â€” Picks</title>
+  <link rel="stylesheet" href="style.css?v=20260429-0100">
   <style>
     .picks-layout {
       display: grid;
@@ -140,6 +140,21 @@
     }
     .fixture-card.locked { opacity: .8; }
 
+    .fixture-group-title {
+      margin: 18px 0 4px;
+      font-family: var(--font-display);
+      color: var(--accent);
+      letter-spacing: .5px;
+      font-size: 18px;
+    }
+
+    .fixture-card-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 220px;
+      gap: 18px;
+      align-items: stretch;
+    }
+
     .fixture-main {
       display: grid;
       grid-template-columns: 1fr 100px 1fr;
@@ -195,6 +210,49 @@
       gap: 8px;
     }
 
+    .pick-stats-panel {
+      border-left: 1px solid var(--border);
+      padding-left: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .pick-stats-title {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      font-weight: 700;
+    }
+
+    .pick-stat-row {
+      display: grid;
+      grid-template-columns: 38px 1fr 34px;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .pick-stat-bar {
+      height: 7px;
+      background: var(--surface2);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .pick-stat-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: inherit;
+    }
+
+    .pick-stat-fill.draw { background: var(--blue); }
+    .pick-stat-fill.away { background: #FF8C00; }
+
     .summary-bar {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -242,6 +300,8 @@
     @media (max-width: 768px) {
       .picks-layout { grid-template-columns: 1fr; }
       .rounds-sidebar { position: static; }
+      .fixture-card-grid { grid-template-columns: 1fr; }
+      .pick-stats-panel { border-left: 0; border-top: 1px solid var(--border); padding-left: 0; padding-top: 14px; }
       .fixture-main { grid-template-columns: 1fr 70px 1fr; gap: 8px; }
       .form-row { grid-template-columns: 1fr; }
     }
@@ -265,7 +325,7 @@
       <!-- MAIN: Fixtures -->
       <div id="main-area">
         <div class="no-round-selected">
-          <div style="font-size:48px;margin-bottom:16px;">🎯</div>
+          <div style="font-size:48px;margin-bottom:16px;">ðŸŽ¯</div>
           <div class="font-display" style="font-size:24px;color:var(--text-dim);margin-bottom:8px;">ELIGE UNA FECHA</div>
           <div style="font-size:14px;">Selecciona una liga y fecha del panel izquierdo.</div>
         </div>
@@ -275,7 +335,7 @@
 
   <script src="config.js"></script>
   <script src="logos.js"></script>
-  <script src="app.js?v=20260428-1240"></script>
+  <script src="app.js?v=20260429-0100"></script>
   <script>
     if (!requireAuth()) throw new Error('redirect');
     renderNav('picks');
@@ -288,6 +348,8 @@
     let currentRoundName = 'Jornada';
     let picks = {}; // { fixture_id: '1'|'X'|'2' }
     let fixtures = [];
+    let pickStats = {};
+    let currentLeagueSport = '';
     let roundDeadlinePassed = false;
 
     // Load leagues + rounds for sidebar
@@ -323,7 +385,7 @@
             el.dataset.roundId  = r.id;
             el.dataset.leagueId = lg.id;
             el.innerHTML = `
-              <div>${r.name} ${passed ? '🔒' : ''}</div>
+              <div>${r.name} ${passed ? 'ðŸ”’' : ''}</div>
               ${r.deadline ? `<div class="round-item-meta">${formatDateShort(r.deadline)}</div>` : ''}
             `;
             el.onclick = () => selectRound(r.id, lg.id, el);
@@ -371,9 +433,10 @@
 
       try {
         // Load fixtures and user's picks in parallel
-        const [fxs, userPicks, leagues, rounds, standingsData] = await Promise.all([
+        const [fxs, userPicks, statsRows, leagues, rounds, standingsData] = await Promise.all([
           api(`/fixtures?round_id=${roundId}`),
           api(`/picks?round_id=${roundId}`).catch(() => []),
+          api(`/pick-stats?round_id=${roundId}`).catch(() => []),
           api('/leagues'),
           api(`/rounds?league_id=${leagueId}`),
           api(`/standings?league_id=${leagueId}`).catch(() => ({ standings: [] })),
@@ -383,15 +446,18 @@
         const round  = rounds.find(r => r.id == roundId) || {};
         const league = leagues.find(l => l.id == leagueId) || {};
         currentRoundName = round.name || 'Jornada';
+        currentLeagueSport = league.sport || '';
 
         roundDeadlinePassed = isDeadlinePassed(round.deadline);
 
         // Merge user picks
         userPicks.forEach(p => { picks[p.fixture_id] = p.pick; });
+        pickStats = {};
+        statsRows.forEach(row => { pickStats[row.fixture_id] = row; });
 
         renderFixtures(fxs, round, league, standingsData.standings || []);
       } catch(e) {
-        main.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-title">${e.message}</div></div>`;
+        main.innerHTML = `<div class="empty"><div class="empty-icon">âš ï¸</div><div class="empty-title">${e.message}</div></div>`;
       }
     }
 
@@ -407,7 +473,7 @@
             </div>
           </div>
           <div class="empty">
-            <div class="empty-icon">📅</div>
+            <div class="empty-icon">ðŸ“…</div>
             <div class="empty-title">SIN PARTIDOS</div>
             <div class="empty-desc">El administrador no ha cargado los partidos de esta fecha.</div>
           </div>
@@ -422,13 +488,13 @@
             <div class="picks-round-name">${round.name || 'Fecha'}</div>
             ${round.deadline ? `
               <div class="picks-deadline ${roundDeadlinePassed ? 'passed' : ''}">
-                ${roundDeadlinePassed ? '🔒 Cerrado' : '⏰ Cierra:'} ${formatDate(round.deadline)}
+                ${roundDeadlinePassed ? 'ðŸ”’ Cerrado' : 'â° Cierra:'} ${formatDate(round.deadline)}
               </div>
             ` : ''}
           </div>
           ${!roundDeadlinePassed ? `
             <button class="btn btn-accent btn-lg" id="btn-save" onclick="savePicks()">
-              💾 Guardar Picks
+              ðŸ’¾ Guardar Picks
             </button>
           ` : ''}
         </div>
@@ -444,15 +510,43 @@
               <div class="summary-label">partidos seleccionados</div>
             </div>
             <button class="btn btn-accent" id="btn-save2" onclick="savePicks()">
-              💾 Guardar Picks
+              ðŸ’¾ Guardar Picks
             </button>
           </div>
         ` : ''}
       `;
 
       const list = document.getElementById('fixtures-list');
-      fxs.forEach(fx => list.appendChild(buildFixtureCard(fx)));
+      renderFixtureGroups(list, fxs);
       updatePickCount();
+    }
+
+    function renderFixtureGroups(list, fxs) {
+      const groups = new Map();
+      fxs.forEach(fx => {
+        const key = fixtureGroupName(fx);
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(fx);
+      });
+      const showGroups = groups.size > 1 || Array.from(groups.keys())[0] !== 'Partidos';
+      groups.forEach((items, groupName) => {
+        if (showGroups) {
+          const title = document.createElement('div');
+          title.className = 'fixture-group-title';
+          title.textContent = groupName;
+          list.appendChild(title);
+        }
+        items.forEach(fx => list.appendChild(buildFixtureCard(fx)));
+      });
+    }
+
+    function fixtureGroupName(fx) {
+      if (fx.group_name) return fx.group_name;
+      const id = String(fx.external_id || '').toLowerCase();
+      const wc = id.match(/seed-worldcup-([a-l])/);
+      if (wc) return `Grupo ${wc[1].toUpperCase()}`;
+      if (id === 'seed-worldcup-1' || id === 'seed-worldcup-2') return 'Grupo A';
+      return 'Partidos';
     }
 
     function leagueTitleHtml(league) {
@@ -550,25 +644,54 @@
            ${fx.match_time ? `<div class="fixture-time">${formatDateShort(fx.match_time)}</div>` : ''}`;
 
       div.innerHTML = `
-        <div class="fixture-main">
-          <div class="fixture-team-block fixture-team-home">
-            <div class="team-with-logo">${teamLogoHtml(fx.home_logo, fx.home_team)}<div class="fixture-team-name">${displayTeamName(fx.home_team)}</div></div>
-            <div class="text-xs text-muted">LOCAL</div>
-          </div>
-          <div class="fixture-mid">${scoreHtml}</div>
-          <div class="fixture-team-block fixture-team-away">
-            <div class="team-with-logo">${teamLogoHtml(fx.away_logo, fx.away_team)}<div class="fixture-team-name">${displayTeamName(fx.away_team)}</div></div>
-            <div class="text-xs text-muted">VISITA</div>
-          </div>
-        </div>
+        <div class="fixture-card-grid">
+          <div>
+            <div class="fixture-main">
+              <div class="fixture-team-block fixture-team-home">
+                <div class="team-with-logo">${teamLogoHtml(fx.home_logo, fx.home_team)}<div class="fixture-team-name">${displayTeamName(fx.home_team)}</div></div>
+                <div class="text-xs text-muted">LOCAL</div>
+              </div>
+              <div class="fixture-mid">${scoreHtml}</div>
+              <div class="fixture-team-block fixture-team-away">
+                <div class="team-with-logo">${teamLogoHtml(fx.away_logo, fx.away_team)}<div class="fixture-team-name">${displayTeamName(fx.away_team)}</div></div>
+                <div class="text-xs text-muted">VISITA</div>
+              </div>
+            </div>
 
-        <div class="pick-buttons">
-          ${buildPickBtn(fx, '1', fx.home_team, isLocked, userPick, fx.result)}
-          ${buildPickBtn(fx, 'X', 'EMPATE',      isLocked, userPick, fx.result)}
-          ${buildPickBtn(fx, '2', fx.away_team,  isLocked, userPick, fx.result)}
+            <div class="pick-buttons">
+              ${buildPickBtn(fx, '1', fx.home_team, isLocked, userPick, fx.result)}
+              ${allowDraw(fx) ? buildPickBtn(fx, 'X', 'EMPATE', isLocked, userPick, fx.result) : ''}
+              ${buildPickBtn(fx, '2', fx.away_team,  isLocked, userPick, fx.result)}
+            </div>
+          </div>
+          ${buildPickStatsHtml(fx)}
         </div>
       `;
       return div;
+    }
+
+    function allowDraw(fx) {
+      return currentLeagueSport === 'football';
+    }
+
+    function buildPickStatsHtml(fx) {
+      const stats = pickStats[fx.id] || { total: 0, pct_1: 0, pct_x: 0, pct_2: 0 };
+      return `
+        <div class="pick-stats-panel">
+          <div class="pick-stats-title">Preferencias (${stats.total || 0})</div>
+          ${pickStatRow('1', displayTeamName(fx.home_team), stats.pct_1 || 0, '')}
+          ${allowDraw(fx) ? pickStatRow('X', 'Empate', stats.pct_x || 0, 'draw') : ''}
+          ${pickStatRow('2', displayTeamName(fx.away_team), stats.pct_2 || 0, 'away')}
+        </div>`;
+    }
+
+    function pickStatRow(code, label, pct, tone) {
+      return `
+        <div class="pick-stat-row" title="${code} - ${label}">
+          <span>${code}</span>
+          <div class="pick-stat-bar"><div class="pick-stat-fill ${tone}" style="width:${pct}%"></div></div>
+          <strong>${pct}%</strong>
+        </div>`;
     }
 
     function buildPickBtn(fx, value, label, locked, userPick, result) {
@@ -581,9 +704,9 @@
         }
       }
 
-      const shortLabel = value === '1' ? `1 — ${shorten(displayTeamName(fx.home_team))}`
+      const shortLabel = value === '1' ? `1 â€” ${shorten(displayTeamName(fx.home_team))}`
                        : value === 'X' ? 'X'
-                       : `2 — ${shorten(displayTeamName(fx.away_team))}`;
+                       : `2 â€” ${shorten(displayTeamName(fx.away_team))}`;
 
       return `<button class="pick-btn ${userPick === value ? (result ? (result===value?' correct':' wrong') : `selected-${value}`) : ''}"
         ${locked ? 'disabled' : ''}
@@ -595,7 +718,7 @@
 
     function shorten(s) {
       if (!s) return '';
-      return s.length > 10 ? s.substring(0,10)+'…' : s;
+      return s.length > 10 ? s.substring(0,10)+'â€¦' : s;
     }
 
     function setPick(fixtureId, value, btn) {
@@ -640,7 +763,7 @@
 
     async function savePicks() {
       if (Object.keys(picks).length === 0) {
-        toast('No has seleccionado ningún pick', 'error');
+        toast('No has seleccionado ningÃºn pick', 'error');
         return;
       }
 
@@ -653,12 +776,12 @@
         }));
 
         await api('/picks', { method: 'POST', body: { picks: payload } });
-        toast(`✅ ${payload.length} picks guardados`, 'success');
+        toast(`âœ… ${payload.length} picks guardados`, 'success');
         refreshExpertFixtureOptions();
       } catch(e) {
         toast(e.message, 'error');
       } finally {
-        btns.forEach(b => { b.disabled = false; b.textContent = '💾 Guardar Picks'; });
+        btns.forEach(b => { b.disabled = false; b.textContent = 'ðŸ’¾ Guardar Picks'; });
       }
     }
 

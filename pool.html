@@ -1,0 +1,250 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dupo Polla - Pool</title>
+  <link rel="stylesheet" href="style.css?v=20260429-0100">
+  <style>
+    .pool-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 18px;
+      margin: 28px 0 18px;
+      flex-wrap: wrap;
+    }
+
+    .pool-title {
+      font-family: var(--font-display);
+      font-size: 34px;
+      letter-spacing: 1px;
+      line-height: 1;
+    }
+
+    .pool-meta { color: var(--text-muted); font-size: 13px; margin-top: 6px; }
+
+    .pool-controls {
+      display: grid;
+      grid-template-columns: minmax(180px, 260px) minmax(180px, 260px);
+      gap: 10px;
+    }
+
+    .pool-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: auto;
+    }
+
+    .pool-table {
+      width: 100%;
+      min-width: 900px;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .pool-table th,
+    .pool-table td {
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      padding: 9px;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .pool-table th {
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: .4px;
+      background: var(--surface2);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    .pool-user {
+      text-align: left !important;
+      min-width: 190px;
+      position: sticky;
+      left: 0;
+      background: var(--surface);
+      z-index: 2;
+    }
+
+    .pool-table th.pool-user { background: var(--surface2); z-index: 3; }
+    .pool-rank { width: 46px; color: var(--text-muted); font-family: var(--font-display); font-size: 18px; }
+    .pool-score { font-family: var(--font-display); font-size: 20px; color: var(--accent); width: 70px; }
+
+    .pool-fixture-head {
+      min-width: 82px;
+      max-width: 96px;
+      white-space: normal;
+    }
+
+    .pool-pick {
+      min-width: 56px;
+      border-radius: 6px;
+      font-weight: 800;
+    }
+
+    .pool-pick.correct { background: rgba(22,199,132,.18); color: var(--success); }
+    .pool-pick.wrong { background: rgba(255,77,109,.18); color: var(--danger); }
+    .pool-pick.pending { background: var(--surface2); color: var(--text-dim); }
+
+    .pool-empty {
+      padding: 28px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    @media (max-width: 720px) {
+      .pool-controls { grid-template-columns: 1fr; width: 100%; }
+      .pool-title { font-size: 28px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="navbar" id="navbar"></header>
+
+  <main class="container">
+    <div class="pool-head">
+      <div>
+        <div class="section-kicker">Pool</div>
+        <h1 class="pool-title">Picks grupales</h1>
+        <div class="pool-meta" id="pool-meta">Elige una liga y una jornada.</div>
+      </div>
+      <div class="pool-controls">
+        <select id="league-select" class="form-select"></select>
+        <select id="round-select" class="form-select"></select>
+      </div>
+    </div>
+
+    <div id="pool-area" class="pool-wrap">
+      <div class="pool-empty">Cargando...</div>
+    </div>
+  </main>
+
+  <script src="config.js?v=20260429-0100"></script>
+  <script src="logos.js?v=20260429-0100"></script>
+  <script src="app.js?v=20260429-0100"></script>
+  <script>
+    if (!requireAuth()) throw new Error('auth');
+    renderNav('pool');
+
+    let leagues = [];
+    let roundsByLeague = new Map();
+
+    initPool();
+
+    async function initPool() {
+      leagues = await api('/leagues');
+      const leagueSelect = document.getElementById('league-select');
+      leagueSelect.innerHTML = leagues.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+      leagueSelect.onchange = () => loadRounds(leagueSelect.value);
+
+      const first = getParam('league_id') || leagues[0]?.id;
+      if (first) {
+        leagueSelect.value = first;
+        await loadRounds(first, getParam('round_id'));
+      }
+    }
+
+    async function loadRounds(leagueId, preferredRoundId = '') {
+      let rounds = roundsByLeague.get(String(leagueId));
+      if (!rounds) {
+        rounds = await api(`/rounds?league_id=${leagueId}`);
+        roundsByLeague.set(String(leagueId), rounds);
+      }
+
+      const roundSelect = document.getElementById('round-select');
+      roundSelect.innerHTML = rounds.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+      roundSelect.onchange = () => loadPool(roundSelect.value);
+
+      const roundId = preferredRoundId || rounds[0]?.id;
+      if (roundId) {
+        roundSelect.value = roundId;
+        await loadPool(roundId);
+      } else {
+        document.getElementById('pool-area').innerHTML = '<div class="pool-empty">Esta liga todavia no tiene jornadas.</div>';
+      }
+    }
+
+    async function loadPool(roundId) {
+      const area = document.getElementById('pool-area');
+      area.innerHTML = '<div class="pool-empty">Cargando pool...</div>';
+      const data = await api(`/pool?round_id=${roundId}`);
+      const url = new URL(window.location.href);
+      url.searchParams.set('league_id', document.getElementById('league-select').value);
+      url.searchParams.set('round_id', roundId);
+      window.history.replaceState({}, '', url);
+      renderPool(data);
+    }
+
+    function renderPool(data) {
+      const area = document.getElementById('pool-area');
+      const fixtures = data.fixtures || [];
+      const users = data.users || [];
+      document.getElementById('pool-meta').textContent = `${data.round.league_name} - ${data.round.name}`;
+
+      if (!fixtures.length) {
+        area.innerHTML = '<div class="pool-empty">No hay partidos cargados para esta jornada.</div>';
+        return;
+      }
+
+      if (!users.length) {
+        area.innerHTML = '<div class="pool-empty">Todavia nadie guardo picks en esta jornada.</div>';
+        return;
+      }
+
+      area.innerHTML = `
+        <table class="pool-table">
+          <thead>
+            <tr>
+              <th class="pool-rank">#</th>
+              <th class="pool-user">Usuario</th>
+              <th class="pool-score">Pts</th>
+              ${fixtures.map(fx => `<th class="pool-fixture-head">${fixtureHead(fx)}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${users.map(user => `
+              <tr>
+                <td class="pool-rank">${user.rank}</td>
+                <td class="pool-user">
+                  <div class="team-with-logo">${avatarHtml(user, 'team-logo')}<span>${user.display_name || user.username}</span></div>
+                </td>
+                <td class="pool-score">${user.score}</td>
+                ${fixtures.map(fx => pickCell(user.picks?.[fx.id], fx)).join('')}
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function fixtureHead(fx) {
+      return `
+        <div class="team-with-logo" style="justify-content:center;margin-bottom:4px;">${teamLogoHtml(fx.home_logo, fx.home_team, 'team-logo')}<span>${shorten(displayTeamName(fx.home_team), 7)}</span></div>
+        <div class="text-xs text-muted">vs</div>
+        <div class="team-with-logo" style="justify-content:center;margin-top:4px;">${teamLogoHtml(fx.away_logo, fx.away_team, 'team-logo')}<span>${shorten(displayTeamName(fx.away_team), 7)}</span></div>
+      `;
+    }
+
+    function pickCell(pick, fx) {
+      if (!pick) return '<td class="pool-pick pending">-</td>';
+      const cls = pick.is_correct === 1 ? 'correct' : pick.is_correct === 0 ? 'wrong' : 'pending';
+      const label = pick.pick === '1' ? shorten(displayTeamName(fx.home_team), 8)
+        : pick.pick === '2' ? shorten(displayTeamName(fx.away_team), 8)
+        : 'Empate';
+      return `<td class="pool-pick ${cls}" title="${label}">${pick.pick}</td>`;
+    }
+
+    function shorten(text, max) {
+      text = String(text || '');
+      return text.length > max ? `${text.slice(0, max)}...` : text;
+    }
+  </script>
+</body>
+</html>

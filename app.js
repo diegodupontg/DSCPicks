@@ -110,6 +110,7 @@ function renderNav(activePage = '') {
       <ul class="navbar-links">
         <li><a href="dashboard.html" class="${activePage==='dashboard'?'active':''}">Dashboard</a></li>
         <li><a href="picks.html" class="${activePage==='picks'?'active':''}">Mis Picks</a></li>
+        <li><a href="pool.html" class="${activePage==='pool'?'active':''}">Pool</a></li>
         <li><a href="brackets.html" class="${activePage==='brackets'?'active':''}">Brackets</a></li>
         ${adminLink}
       </ul>

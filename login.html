@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dupo Polla — Ingresar</title>
-  <link rel="stylesheet" href="style.css?v=20260428-1305">
+  <title>Dupo Polla â€” Ingresar</title>
+  <link rel="stylesheet" href="style.css?v=20260429-0100">
   <style>
     body { display: flex; align-items: stretch; min-height: 100vh; }
 
@@ -15,7 +15,7 @@
       min-height: 100vh;
     }
 
-    /* ── LEFT: branding ── */
+    /* â”€â”€ LEFT: branding â”€â”€ */
     .auth-left {
       background: var(--surface);
       border-right: 1px solid var(--border);
@@ -81,7 +81,7 @@
       color: var(--text-muted);
     }
 
-    /* ── RIGHT: form ── */
+    /* â”€â”€ RIGHT: form â”€â”€ */
     .auth-right {
       display: flex;
       flex-direction: column;
@@ -114,6 +114,16 @@
     .auth-tab.active {
       background: var(--surface2);
       color: var(--text);
+    }
+
+    .auth-link {
+      border: 0;
+      background: transparent;
+      color: var(--accent);
+      cursor: pointer;
+      font-weight: 700;
+      padding: 0;
+      text-align: left;
     }
 
     .auth-form { display: flex; flex-direction: column; gap: 16px; }
@@ -160,14 +170,14 @@
       </h1>
       <p class="auth-sub">
         Predice resultados, compite con tus amigos y lleva la tabla en tiempo real.
-        Fútbol, basketball y brackets — todo en un solo lugar.
+        FÃºtbol, basketball y brackets â€” todo en un solo lugar.
       </p>
       <div class="auth-pills">
-        <span class="auth-pill">⚽ Champions League</span>
-        <span class="auth-pill">⚽ Eliminatorias</span>
-        <span class="auth-pill">🏀 EuroLeague</span>
-        <span class="auth-pill">🏀 ACB</span>
-        <span class="auth-pill">🏆 Brackets</span>
+        <span class="auth-pill">âš½ Champions League</span>
+        <span class="auth-pill">âš½ Eliminatorias</span>
+        <span class="auth-pill">ðŸ€ EuroLeague</span>
+        <span class="auth-pill">ðŸ€ ACB</span>
+        <span class="auth-pill">ðŸ† Brackets</span>
       </div>
     </div>
 
@@ -189,12 +199,13 @@
           <input type="text" id="login-user" class="form-input" placeholder="Tu nombre de usuario" autocomplete="username">
         </div>
         <div class="form-group">
-          <label class="form-label">Contraseña</label>
-          <input type="password" id="login-pass" class="form-input" placeholder="••••••••" autocomplete="current-password">
+          <label class="form-label">ContraseÃ±a</label>
+          <input type="password" id="login-pass" class="form-input" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" autocomplete="current-password">
         </div>
         <button class="btn btn-accent btn-full btn-lg" id="btn-login" onclick="doLogin()">
           Ingresar
         </button>
+        <button class="auth-link" onclick="showRecoveryStart()">Olvide mi contrasena</button>
       </div>
 
       <!-- REGISTER -->
@@ -217,28 +228,75 @@
           <div class="text-xs text-muted">PNG, JPG, WebP o GIF. Maximo 250 KB.</div>
         </div>
         <div class="form-group">
-          <label class="form-label">Contraseña</label>
+          <label class="form-label">ContraseÃ±a</label>
           <input type="password" id="reg-pass" class="form-input" placeholder="Minimo 8 caracteres con letras y numeros" autocomplete="new-password" oninput="updatePasswordHint()">
           <div class="text-xs text-muted" id="password-hint">Usa al menos 8 caracteres, con una letra y un numero.</div>
         </div>
         <div class="form-group">
-          <label class="form-label">Confirmar Contraseña</label>
-          <input type="password" id="reg-pass2" class="form-input" placeholder="Repite tu contraseña" autocomplete="new-password">
+          <label class="form-label">Confirmar ContraseÃ±a</label>
+          <input type="password" id="reg-pass2" class="form-input" placeholder="Repite tu contraseÃ±a" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Pregunta de seguridad</label>
+          <select id="reg-security-question" class="form-select">
+            <option value="">Configurar despues</option>
+            <option value="Cual fue tu primer equipo favorito?">Cual fue tu primer equipo favorito?</option>
+            <option value="En que ciudad naciste?">En que ciudad naciste?</option>
+            <option value="Cual fue el nombre de tu primera mascota?">Cual fue el nombre de tu primera mascota?</option>
+            <option value="Cual es tu apodo de infancia?">Cual es tu apodo de infancia?</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Respuesta</label>
+          <input type="password" id="reg-security-answer" class="form-input" placeholder="No la olvides">
         </div>
         <button class="btn btn-accent btn-full btn-lg" id="btn-register" onclick="doRegister()">
           Crear cuenta
         </button>
       </div>
 
+      <!-- RECOVERY -->
+      <div id="panel-recovery" class="auth-form-panel">
+        <div>
+          <h2 class="auth-title">Recuperar contrasena</h2>
+          <p class="auth-desc">Responde tu pregunta de seguridad para crear una nueva contrasena.</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Usuario</label>
+          <input type="text" id="rec-user" class="form-input" autocomplete="username">
+        </div>
+        <button class="btn btn-outline btn-full" id="btn-rec-question" onclick="loadRecoveryQuestion()">Ver pregunta</button>
+        <div id="recovery-step2" style="display:none;">
+          <div class="form-group">
+            <label class="form-label">Pregunta</label>
+            <div class="form-input" id="rec-question" style="height:auto;min-height:42px;"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Respuesta</label>
+            <input type="password" id="rec-answer" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nueva contrasena</label>
+            <input type="password" id="rec-pass" class="form-input" autocomplete="new-password">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirmar nueva contrasena</label>
+            <input type="password" id="rec-pass2" class="form-input" autocomplete="new-password">
+          </div>
+          <button class="btn btn-accent btn-full btn-lg" id="btn-reset" onclick="resetPassword()">Cambiar contrasena</button>
+        </div>
+        <button class="auth-link" onclick="switchTab('login')">Volver a ingresar</button>
+      </div>
+
       <p class="auth-footer">
-        Dupo Polla · Dupo Corp &copy; 2025
+        Dupo Polla Â· Dupo Corp &copy; 2025
       </p>
     </div>
   </div>
 
   <script src="config.js"></script>
   <script src="logos.js"></script>
-  <script src="app.js?v=20260428-1305"></script>
+  <script src="app.js?v=20260429-0100"></script>
   <script>
     document.getElementById('auth-brand-logo').innerHTML = brandLogoHtml('auth');
 
@@ -250,6 +308,13 @@
         b.classList.toggle('active', b.dataset.tab === tab));
       document.getElementById('panel-login').classList.toggle('active', tab === 'login');
       document.getElementById('panel-register').classList.toggle('active', tab === 'register');
+      document.getElementById('panel-recovery').classList.toggle('active', tab === 'recovery');
+    }
+
+    function showRecoveryStart() {
+      document.querySelectorAll('.auth-tab').forEach(b => b.classList.remove('active'));
+      switchTab('recovery');
+      document.getElementById('rec-user').value = document.getElementById('login-user').value.trim();
     }
 
     // Enter key support
@@ -274,7 +339,7 @@
           method: 'POST', body: { username, password }
         });
         setAuth(token, user);
-        toast('¡Bienvenido, ' + user.username + '!', 'success');
+        toast('Â¡Bienvenido, ' + user.username + '!', 'success');
         setTimeout(() => window.location.href = 'dashboard.html', 500);
       } catch(e) {
         toast(e.message, 'error');
@@ -288,14 +353,16 @@
       const display_name = document.getElementById('reg-display').value.trim();
       const password = document.getElementById('reg-pass').value;
       const pass2    = document.getElementById('reg-pass2').value;
+      const security_question = document.getElementById('reg-security-question').value;
+      const security_answer = document.getElementById('reg-security-answer').value;
       const avatarFile = document.getElementById('reg-avatar').files[0];
 
       if (!username || !password) { toast('Completa todos los campos', 'error'); return; }
       if (!/^[a-zA-Z0-9_]{3,24}$/.test(username)) { toast('Usuario: 3-24 caracteres, solo letras, numeros y _', 'error'); return; }
       if (password.length < 8 || !/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
-        toast('La contraseña debe tener 8 caracteres, letras y numeros', 'error'); return;
+        toast('La contraseÃ±a debe tener 8 caracteres, letras y numeros', 'error'); return;
       }
-      if (password !== pass2) { toast('Las contraseñas no coinciden', 'error'); return; }
+      if (password !== pass2) { toast('Las contraseÃ±as no coinciden', 'error'); return; }
       if (avatarFile && avatarFile.size > 250 * 1024) { toast('La imagen supera 250 KB', 'error'); return; }
 
       const btn = document.getElementById('btn-register');
@@ -305,10 +372,10 @@
       try {
         const avatar_url = avatarFile ? await fileToDataURL(avatarFile) : '';
         const { token, user } = await api('/auth/register', {
-          method: 'POST', body: { username, display_name, avatar_url, password }
+          method: 'POST', body: { username, display_name, avatar_url, password, security_question, security_answer }
         });
         setAuth(token, user);
-        toast('¡Cuenta creada! Bienvenido, ' + user.username, 'success');
+        toast('Â¡Cuenta creada! Bienvenido, ' + user.username, 'success');
         setTimeout(() => window.location.href = 'dashboard.html', 500);
       } catch(e) {
         toast(e.message, 'error');
@@ -317,11 +384,56 @@
       }
     }
 
+    async function loadRecoveryQuestion() {
+      const username = document.getElementById('rec-user').value.trim();
+      if (!username) { toast('Escribe tu usuario', 'error'); return; }
+      const btn = document.getElementById('btn-rec-question');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Buscando...';
+      try {
+        const data = await api('/auth/recovery-question', { method: 'POST', body: { username } });
+        document.getElementById('rec-question').textContent = data.question;
+        document.getElementById('recovery-step2').style.display = 'block';
+      } catch(e) {
+        toast(e.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Ver pregunta';
+      }
+    }
+
+    async function resetPassword() {
+      const username = document.getElementById('rec-user').value.trim();
+      const answer = document.getElementById('rec-answer').value;
+      const password = document.getElementById('rec-pass').value;
+      const pass2 = document.getElementById('rec-pass2').value;
+      if (!username || !answer || !password) { toast('Completa todos los campos', 'error'); return; }
+      if (password !== pass2) { toast('Las contrasenas no coinciden', 'error'); return; }
+      if (password.length < 8 || !/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+        toast('La contrasena debe tener 8 caracteres, letras y numeros', 'error'); return;
+      }
+      const btn = document.getElementById('btn-reset');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Cambiando...';
+      try {
+        await api('/auth/reset-password', { method: 'POST', body: { username, answer, password } });
+        toast('Contrasena actualizada. Ya puedes ingresar.', 'success');
+        switchTab('login');
+        document.getElementById('login-user').value = username;
+        document.getElementById('login-pass').value = '';
+      } catch(e) {
+        toast(e.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Cambiar contrasena';
+      }
+    }
+
     function updatePasswordHint() {
       const pass = document.getElementById('reg-pass').value;
       const ok = pass.length >= 8 && /[A-Za-z]/.test(pass) && /[0-9]/.test(pass);
       const hint = document.getElementById('password-hint');
-      hint.textContent = ok ? 'Contraseña lista.' : 'Usa al menos 8 caracteres, con una letra y un numero.';
+      hint.textContent = ok ? 'ContraseÃ±a lista.' : 'Usa al menos 8 caracteres, con una letra y un numero.';
       hint.className = ok ? 'text-xs text-success' : 'text-xs text-muted';
     }
 

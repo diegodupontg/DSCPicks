@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dupo Polla - Admin</title>
-  <link rel="stylesheet" href="style.css?v=20260428-1240">
+  <link rel="stylesheet" href="style.css?v=20260429-0100">
   <style>
     .admin-grid {
       display: grid;
@@ -17,8 +17,20 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 12px;
     }
+    .admin-user-row {
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .admin-user-actions {
+      display: grid;
+      grid-template-columns: minmax(120px, 1fr) auto;
+      gap: 8px;
+      width: 100%;
+      margin-top: 8px;
+    }
     @media (max-width: 900px) {
       .admin-grid, .form-row { grid-template-columns: 1fr; }
+      .admin-user-actions { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -109,7 +121,7 @@
 
   <script src="config.js"></script>
   <script src="logos.js"></script>
-  <script src="app.js?v=20260428-1240"></script>
+  <script src="app.js?v=20260429-0100"></script>
   <script>
     if (!requireAdmin()) throw new Error('redirect');
     renderNav('admin');
@@ -206,7 +218,7 @@
         }
         select.innerHTML = picks.map(p => `
           <option value="${p.fixture_id}" data-pick="${p.pick}" data-round="${p.round_name}">
-            ${p.round_name} · ${pickLabelAdmin(p.pick, p.home_team, p.away_team)} · ${displayTeamName(p.home_team)} vs ${displayTeamName(p.away_team)}
+            ${p.round_name} Â· ${pickLabelAdmin(p.pick, p.home_team, p.away_team)} Â· ${displayTeamName(p.home_team)} vs ${displayTeamName(p.away_team)}
           </option>
         `).join('');
         applyExpertPickSelection();
@@ -235,11 +247,15 @@
       try {
         const users = await api('/admin/users');
         el.innerHTML = users.map(u => `
-          <div class="lb-row">
+          <div class="lb-row admin-user-row">
             ${u.avatar_url ? `<img class="expert-avatar" src="${u.avatar_url}" alt="${u.display_name || u.username}">` : `<div class="expert-avatar">${(u.display_name || u.username || '?')[0].toUpperCase()}</div>`}
             <div style="flex:1;">
               <div class="lb-name">${u.display_name || u.username}</div>
               <div class="lb-meta">@${u.username}</div>
+              <div class="admin-user-actions">
+                <input id="reset-pass-${u.id}" type="password" class="form-input" placeholder="Nueva contrasena temporal">
+                <button class="btn btn-outline btn-sm" onclick="resetUserPassword(${u.id}, '${u.username.replace(/'/g, "\\'")}')">Reset pass</button>
+              </div>
             </div>
             <label class="text-xs text-muted flex-center gap-4">
               <input type="checkbox" ${u.is_admin ? 'checked' : ''} onchange="updateRole(${u.id}, this.checked, document.getElementById('super-${u.id}').checked)">
@@ -253,6 +269,27 @@
         `).join('');
       } catch(e) {
         el.textContent = e.message;
+      }
+    }
+
+    async function resetUserPassword(userId, username) {
+      const input = document.getElementById(`reset-pass-${userId}`);
+      const password = input.value;
+      if (!password) { toast('Escribe una contrasena temporal', 'error'); return; }
+      if (password.length < 8 || !/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+        toast('Debe tener 8 caracteres, letras y numeros', 'error');
+        return;
+      }
+      if (!confirm(`Resetear contrasena de @${username}?`)) return;
+      try {
+        await api(`/admin/users/${userId}/password`, {
+          method: 'PUT',
+          body: { password }
+        });
+        input.value = '';
+        toast(`Contrasena reseteada para @${username}`, 'success');
+      } catch(e) {
+        toast(e.message, 'error');
       }
     }
 

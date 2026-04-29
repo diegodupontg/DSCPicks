@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DSC Picks - Brackets</title>
-  <link rel="stylesheet" href="style.css?v=20260428-1305">
+  <link rel="stylesheet" href="style.css?v=20260429-0100">
   <style>
     .bracket-toolbar {
       display: flex;
@@ -163,7 +163,7 @@
 
   <script src="config.js"></script>
   <script src="logos.js"></script>
-  <script src="app.js?v=20260428-1305"></script>
+  <script src="app.js?v=20260429-0100"></script>
   <script>
     if (!requireAuth()) throw new Error('redirect');
     renderNav('brackets');
@@ -236,6 +236,14 @@
       }
 
       const firstRound = await firstRoundForLeague(slug);
+      if (!firstRound.length) {
+        document.getElementById('bracket-area').innerHTML = `
+          <div class="empty">
+            <div class="empty-title">SIN BRACKET REAL</div>
+            <div class="empty-desc">Sin standings o partidos suficientes desde ESPN para armar esta ronda sin inventar cruces.</div>
+          </div>`;
+        return;
+      }
       renderKnockout(TEMPLATES[slug] || TEMPLATES['nba-playoffs'], firstRound);
     }
 
@@ -260,7 +268,7 @@
           <div class="group-title">Grupo ${group}</div>
           ${[1,2,3,4].map(pos => `
             <div class="group-row">
-              <span class="bracket-seed">${pos}º</span>
+              <span class="bracket-seed">${pos}Âº</span>
               <select class="form-select" onchange="setGroupPick('${group}', ${pos}, this.value)">
                 ${teams.map(t => `<option value="${t}" ${saved[`g-${group}-${pos}`] === t ? 'selected' : ''}>${displayTeamName(t)}</option>`).join('')}
               </select>
@@ -301,7 +309,7 @@
               const rank = i + 1;
               const selectedGroup = s[`best-third-rank-${rank}`];
               return `<label class="third-check">
-                <span class="bracket-seed">Mejor 3º ${rank}</span>
+                <span class="bracket-seed">Mejor 3Âº ${rank}</span>
                 <select class="form-select" onchange="setThirdRank(${rank}, this.value)">
                   ${groups.map(g => {
                     const team = s[`g-${g}-3`];
@@ -332,11 +340,11 @@
       ensureThirdRanking();
       const third = rank => {
         const group = s[`best-third-rank-${rank}`];
-        return { name: s[`g-${group}-3`] || `Mejor 3º ${rank}`, logo: '', seed: `3${group}` };
+        return { name: s[`g-${group}-3`] || `Mejor 3Âº ${rank}`, logo: '', seed: `3${group}` };
       };
       const thirds = Array.from({ length: 8 }).map((_, i) => {
         const group = s[`best-third-rank-${i + 1}`];
-        return { name: s[`g-${group}-3`] || `Mejor 3º ${i + 1}`, logo: '', seed: `3${group}` };
+        return { name: s[`g-${group}-3`] || `Mejor 3Âº ${i + 1}`, logo: '', seed: `3${group}` };
       });
       return [
         [team('A', 1, '1A'), third(1)],
@@ -381,23 +389,23 @@
         if (east.length < 8 || west.length < 8) return null;
 
         return [
-          ...seededConferenceMatches(west, 'W'),
-          ...seededConferenceMatches(east, 'E')
+          ...seededConferenceMatches(west),
+          ...seededConferenceMatches(east)
         ];
       } catch {
         return null;
       }
     }
 
-    function seededConferenceMatches(rows, prefix) {
+    function seededConferenceMatches(rows) {
       return [[1,8], [4,5], [3,6], [2,7]].map(([a, b]) => [
-        standingTeam(rows[a - 1], `${prefix}${a}`),
-        standingTeam(rows[b - 1], `${prefix}${b}`)
+        standingTeam(rows[a - 1]),
+        standingTeam(rows[b - 1])
       ]);
     }
 
-    function standingTeam(row, seed) {
-      return { name: row?.team || `Seed ${seed}`, logo: row?.logo || '', seed };
+    function standingTeam(row) {
+      return { name: row?.team || 'Equipo por definir', logo: row?.logo || '' };
     }
 
     async function firstRoundFromFixtures(slug) {
@@ -407,14 +415,11 @@
         const rounds = await api(`/rounds?league_id=${league.id}`);
         const first = rounds.find(r => /1|primera|wild|octavos/i.test(r.name)) || rounds[0];
         if (!first) return fallbackFirstRound(slug);
-        const fixtures = await api(`/fixtures?round_id=${first.id}`);
-        if (!fixtures.length) return fallbackFirstRound(slug);
-        if (slug === 'nba-playoffs' && fixtures.length < 8) {
-          return [...fixtures.map(f => [
-            { name: f.home_team, logo: f.home_logo },
-            { name: f.away_team, logo: f.away_logo }
-          ]), ...nbaPlayoffFallback().slice(fixtures.length)];
+        let fixtures = await api(`/fixtures?round_id=${first.id}`);
+        if (slug === 'nba-playoffs' || slug === 'nba') {
+          fixtures = fixtures.filter(f => f.source !== 'seed' && !String(f.external_id || '').startsWith('seed-nba'));
         }
+        if (!fixtures.length) return fallbackFirstRound(slug);
         return fixtures.map(f => [
           { name: f.home_team, logo: f.home_logo },
           { name: f.away_team, logo: f.away_logo }
@@ -425,22 +430,9 @@
     }
 
     function fallbackFirstRound(slug) {
-      if (slug === 'nba-playoffs' || slug === 'nba') return nbaPlayoffFallback();
+      if (slug === 'nba-playoffs' || slug === 'nba') return [];
       const count = slug === 'nfl' ? 6 : 8;
       return Array.from({ length: count }, (_, i) => [`Equipo ${i + 1}A`, `Equipo ${i + 1}B`]);
-    }
-
-    function nbaPlayoffFallback() {
-      return [
-        ['Detroit Pistons', 'Orlando Magic'],
-        ['Oklahoma City Thunder', 'Phoenix Suns'],
-        ['Denver Nuggets', 'Minnesota Timberwolves'],
-        ['LA Clippers', 'Golden State Warriors'],
-        ['Los Angeles Lakers', 'Memphis Grizzlies'],
-        ['Miami Heat', 'Milwaukee Bucks'],
-        ['New York Knicks', 'Cleveland Cavaliers'],
-        ['Boston Celtics', 'Philadelphia 76ers']
-      ];
     }
 
     function renderKnockout(rounds, firstMatches) {
@@ -501,7 +493,7 @@
 
       area.innerHTML = `
         <div class="bracket-side">
-          ${playoffColumn('Oeste - 1º Ronda', west, 0, 0)}
+          ${playoffColumn('Oeste - 1Âº Ronda', west, 0, 0)}
           ${playoffColumn('Oeste - Semis', generated[1]?.slice(0, Math.ceil((generated[1] || []).length / 2)) || [], 1, 0)}
         </div>
         <div class="bracket-center">
@@ -510,7 +502,7 @@
         </div>
         <div class="bracket-side">
           ${playoffColumn('Este - Semis', generated[1]?.slice(Math.ceil((generated[1] || []).length / 2)) || [], 1, Math.ceil((generated[1] || []).length / 2))}
-          ${playoffColumn('Este - 1º Ronda', east, 0, west.length)}
+          ${playoffColumn('Este - 1Âº Ronda', east, 0, west.length)}
         </div>
       `;
     }
@@ -547,7 +539,7 @@
         <button class="bracket-team ${selected}" onclick="setWinner(${roundIdx}, ${matchIdx}, '${encodeURIComponent(obj.name)}', '${encodeURIComponent(obj.logo || '')}')">
           ${teamLogoHtml(obj.logo || '', obj.name, 'team-logo')}
           <span>${displayTeamName(obj.name)}</span>
-          <span class="bracket-seed">${obj.seed || matchIdx + 1}</span>
+          ${obj.seed ? `<span class="bracket-seed">${obj.seed}</span>` : ''}
         </button>
       `;
     }
